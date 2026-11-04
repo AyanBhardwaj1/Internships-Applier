@@ -32,8 +32,8 @@ These are Ayan's standing rules, carried over from the Career-Ops setup on his M
 - How did you hear: use the true source if it's known (for example Instagram @zero2sudo). Otherwise use LinkedIn.
 - Always tick "I agree", privacy, terms and "I certify" boxes (standing consent). Never opt in to SMS or marketing.
   Never type an e-signature.
-- EEO: Male, Asian (Not Hispanic or Latino), not a protected veteran, no disability. Use "decline" for transgender and
-  orientation questions.
+- EEO (voluntary): use the answers in `private/profile.json` → `eeo`, the same ones given on past forms.
+  Choose "decline" for questions the profile doesn't cover.
 - Why-us and essay questions: write 2–3 plain first-person sentences grounded in the resume and the JD, with no em dashes
   and no fabricated experience. For opinion essays or prompts over ~150 words, leave them blank and show Ayan the
   exact prompt.

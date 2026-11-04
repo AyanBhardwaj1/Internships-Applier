@@ -2,6 +2,7 @@
 // Every answer is a fact from private/profile.json (resume + answers he already gave on past forms).
 // Anything not covered returns { kind: 'ask' } so the item is flagged for Ayan instead of guessed.
 
+const DECLINE = ["I don't wish to answer", 'Decline to self-identify', 'Decline To Self Identify', 'Prefer not to say', 'I prefer not to answer', 'I do not want to answer', 'Decline'];
 const yes = ['Yes'];
 const no = ['No'];
 
@@ -98,14 +99,14 @@ export const RULES = [
   { when: /i (agree|acknowledge|consent|certify|confirm|understand|have read)|privacy (policy|notice)|terms|consent|acknowledg|certif|attest|accurate|true and complete/, a: () => ({ check: true, choose: ['I Acknowledge', 'I agree', 'I Agree', 'Yes', 'Acknowledge', 'I acknowledge', 'Confirm'] }) },
   { when: /signature|sign (here|your name)|type your (full )?name/, a: () => ({ ask: 'E-signature field: he types this himself' }) },
 
-  // ---- EEO (voluntary; answers he gave on past forms)
-  { when: /gender identity|^gender|sex\b|^what is your gender/, a: p => ({ choose: ['Male', 'Man', 'Cisgender man', 'Cis man'] }) },
-  { when: /transgender/, a: () => ({ choose: ["I don't wish to answer", 'Decline to self-identify', 'Prefer not to say', 'I prefer not to answer', 'Decline'] }) },
-  { when: /sexual orientation|lgbt/, a: () => ({ choose: ["I don't wish to answer", 'Decline to self-identify', 'Prefer not to say', 'I prefer not to answer'] }) },
-  { when: /hispanic|latin[oax]/, a: () => ({ choose: ['No', 'Not Hispanic or Latino', 'No, not Hispanic or Latino'] }) },
-  { when: /\brace\b|ethnicity|ethnic background/, a: p => ({ choose: ['Asian (Not Hispanic or Latino)', 'Asian', 'South Asian', 'Asian - South Asian', 'Asian Indian'] }) },
-  { when: /veteran/, a: p => ({ choose: ['I am not a protected veteran', 'I am not a Protected Veteran', 'Not a protected veteran', 'I am not a veteran', 'No, I am not a veteran', 'No'] }) },
-  { when: /disabilit/, a: p => ({ choose: ['No, I do not have a disability', "No, I don't have a disability", 'No, I do not have a disability and have not had one in the past', 'No'] }) },
+  // ---- EEO (voluntary): values come from profile.eeo; anything unset gets a decline option
+  { when: /gender identity|^gender|sex\b|^what is your gender/, a: p => ({ choose: [p.eeo.gender, p.eeo.genderIdentity, ...DECLINE].filter(Boolean) }) },
+  { when: /transgender/, a: p => ({ choose: [p.eeo.transgender, ...DECLINE].filter(Boolean) }) },
+  { when: /sexual orientation|lgbt/, a: p => ({ choose: [p.eeo.sexualOrientation, ...DECLINE].filter(Boolean) }) },
+  { when: /hispanic|latin[oax]/, a: p => ({ choose: p.eeo.hispanic === true ? ['Yes', 'Hispanic or Latino'] : p.eeo.hispanic === false ? ['No', 'Not Hispanic or Latino', 'No, not Hispanic or Latino'] : DECLINE }) },
+  { when: /\brace\b|ethnicity|ethnic background/, a: p => ({ choose: [p.eeo.raceLong, p.eeo.race, ...(p.eeo.raceAlt || []), ...DECLINE].filter(Boolean) }) },
+  { when: /veteran/, a: p => ({ choose: p.eeo.veteran ? [p.eeo.veteran, 'I am not a Protected Veteran', 'Not a protected veteran', 'I am not a veteran', 'No, I am not a veteran', 'No'] : DECLINE }) },
+  { when: /disabilit/, a: p => ({ choose: p.eeo.disability ? [p.eeo.disability, 'No, I do not have a disability', "No, I don't have a disability", 'No'] : DECLINE }) },
   { when: /^(date|today'?s date)$/, a: () => ({ text: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) }) },
 ];
 

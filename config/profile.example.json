@@ -87,7 +87,8 @@
     "race": "Asian",
     "raceLong": "Asian (Not Hispanic or Latino)",
     "veteran": "I am not a protected veteran",
-    "disability": "No, I do not have a disability and have not had one in the past"
+    "disability": "No, I do not have a disability and have not had one in the past",
+    "raceAlt": []
   },
   "defaults": {
     "howDidYouHear": "LinkedIn",
