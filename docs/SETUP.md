@@ -51,17 +51,20 @@ commit `private/` so every new cloud session starts with your data already in pl
 
 ## 3. Restore private data in a new cloud session
 
-Cloud containers are wiped between sessions, and `private/` isn't in git. A new session rebuilds it from sources
-you own (Claude does this; see CLAUDE.md):
+Cloud containers are wiped between sessions, and `private/` isn't in git. A new session rebuilds it from
+data you already own (Claude does this; see CLAUDE.md):
 
-| File | Source |
-|---|---|
-| `private/resumes/swe.pdf` | Desk artifact file `resumes/Ayan_Bhardwaj -- Resume.pdf` (https://claude.ai/artifact/KwnbmT3ePXuvwZUNvadg9p) |
-| `private/resumes/ml.pdf` | Desk file `resumes/bank/short-resume-ml-ai-engineering-may-2029.pdf` |
-| `private/resumes/pm.pdf` | Desk file `resumes/bank/short-resume-product-management-may-2029.pdf` |
-| `private/profile.json`, `private/tracker.json` | Google Drive folder **Internships-Applier (private)** (backup written by the cloud session) |
+1. **Resumes.** Copy these Desk artifact files (https://claude.ai/artifact/KwnbmT3ePXuvwZUNvadg9p) to `private/resumes/`:
+   - `resumes/Ayan_Bhardwaj -- Resume.pdf` → `swe.pdf`
+   - `resumes/bank/short-resume-ml-ai-engineering-may-2029.pdf` → `ml.pdf`
+   - `resumes/bank/short-resume-product-management-may-2029.pdf` → `pm.pdf`
+2. **Profile and tracker.** Export the Desk's `applications` database to a folder, then run
+   `node scripts/rebuild-private.mjs <folder>`. It takes each answer you gave most often on past forms and rebuilds
+   `private/profile.json` and `private/tracker.json` (tested 2026-11-04: identical apart from punctuation).
+3. **Queue and cloud-added tracker rows** are mirrored to the Desk as cards, so they come back with step 2.
 
-The Desk's `applications` database also holds the tracker history.
+A private Google Drive folder, "Internships-Applier (private)", was created for direct backups, but uploading
+personal files there was blocked by the session's permission guard. Allow it if you want Drive backups too.
 
 ## 4. Running locally (optional)
 

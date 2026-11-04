@@ -8,7 +8,8 @@ Read `docs/RULES.md` before filling or submitting anything. Those rules are his,
    - Resumes: `Artifact read` on https://claude.ai/artifact/KwnbmT3ePXuvwZUNvadg9p with
      `paths: ["resumes/Ayan_Bhardwaj -- Resume.pdf", "resumes/bank/short-resume-ml-ai-engineering-may-2029.pdf", "resumes/bank/short-resume-product-management-may-2029.pdf"]`,
      then copy them to `private/resumes/{swe,ml,pm}.pdf`.
-   - `profile.json`, `tracker.json` and `queue/`: download from the Google Drive folder "Internships-Applier (private)".
+   - `profile.json` and `tracker.json`: run `ArtifactData list` on the Desk (collection `applications`, `out_dir` set to a scratch dir),
+     then `node scripts/rebuild-private.mjs <scratch-dir>`.
 2. If ATS hosts show BLOCKED, tell Ayan once (docs/SETUP.md §1) and keep working on what doesn't need them.
 
 ## Hard rules (summary; full list in docs/RULES.md)
