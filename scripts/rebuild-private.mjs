@@ -69,4 +69,20 @@ const rows = docs.map(d => ({ id: d._id, num: d.num || null, company: d.company,
   location: d.location || null, stage: d.stage, outcome: d.outcome?.stage || d.stage, history: d.outcome?.history || [], appliedAt: d.appliedAt || null,
   score: d.score ?? null, note: d.note || d.reason || '', source: 'desk' }));
 if (!fs.existsSync(P.tracker) || process.argv.includes('--force')) writeJSON(P.tracker, { updated: today(), rows });
-console.log(`profile: ${p.name.full} · tracker rows from Desk: ${rows.length}`);
+// ---- queue from cloud cards (doc ids "cloud-<slug>") and unsubmitted Desk "ready" cards
+const RES = { 'resumes/Ayan_Bhardwaj -- Resume.pdf': 'swe' };
+let q = 0;
+for (const d of docs) {
+  const cloud = d.source === 'cloud' && d.cloudSlug;
+  const deskReady = d.stage === 'ready' && d.url;
+  if (!(cloud || deskReady) || ['applied', 'interview', 'offer'].includes(d.stage)) continue;
+  const slug = cloud ? d.cloudSlug : `${d._id}-desk`;
+  const f = path.join(P.queueDir, `${slug}.json`);
+  if (fs.existsSync(f)) continue;
+  const resume = /ml-ai/.test(d.resume || '') ? 'ml' : /product-management/.test(d.resume || '') ? 'pm' : (RES[d.resume] || 'swe');
+  writeJSON(f, { slug, id: urlKey(d.url), company: d.company, title: d.role, url: d.url, ats: null, locations: d.location ? String(d.location).split(' / ') : [],
+    resume, score: d.score ?? null, status: 'new', approved: d.decision === 'approved', overrides: {}, asks: [], notes: [], deskId: d._id,
+    origin: cloud ? 'cloud' : 'desk-ready', addedAt: new Date().toISOString(), history: [] });
+  q++;
+}
+console.log(`profile: ${p.name.full} · tracker rows from Desk: ${rows.length} · queue items restored: ${q}`);

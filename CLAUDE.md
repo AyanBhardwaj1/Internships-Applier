@@ -19,6 +19,16 @@ Read `docs/RULES.md` before filling or submitting anything. Those rules are his,
 - No quant/HFT/prop firms. Banks are scrape-only. No sites that need an account.
 - Personal data stays in `private/` (gitignored, because the repo is public). Never commit it.
 
+## "Submit the approved ones" (Desk flow)
+Ayan can tap Approve on Desk cards (https://claude.ai/artifact/KwnbmT3ePXuvwZUNvadg9p). When he says
+"submit the approved ones":
+1. Run `ArtifactData query` on collection `applications` with `where: [["decision","==","approved"]]`.
+2. Skip cards whose stage is already applied, interview or offer. Map each remaining card to its queue item
+   (`cloudSlug` for cloud cards, `<docId>-desk` for older Desk cards).
+3. Run `./apply approve <slugs>` then `./apply submit --approved`.
+4. For each submitted card, update it to `stage: "applied"`, `appliedAt`, `submittedBy: "claude-cloud"`, pinned with `if_version`.
+   Report anything that stopped (CAPTCHA, blank required field, grad gate) with its link.
+
 ## Commands
 `./apply doctor | scan | pick --top N | queue | show <slug> | inspect <slug> | fill <slug|--all> |
 answer <slug> "<question>" "<answer>" | approve <slug> | submit <slug..>|--approved | skip | status | track`

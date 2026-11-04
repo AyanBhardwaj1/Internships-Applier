@@ -9,7 +9,7 @@ export const QUANT_FIRMS = [
   'old mission', 'tower research', 'tower research capital', 'virtu', 'virtu financial', 'ctc', 'chicago trading company',
   'man group', 'kershner', 'kershner trading group', 'hrt', 'millennium', 'point72', 'balyasny', 'radix', 'xtx', 'xtx markets',
   'flow traders', 'belvedere', 'vatic', 'vatic investments', 'schonfeld', 'garda capital partners', 'garda', 'jump',
-  'arrowstreet', 'cubist', 'worldquant', 'pdt partners', 'graham capital', 'de shaw & co', 'sig susquehanna',
+  'dv trading', 'arrowstreet', 'cubist', 'worldquant', 'pdt partners', 'graham capital', 'de shaw & co', 'sig susquehanna',
   'peak6', 'wolverine', 'geneva trading', 'headlands', 'aquatic', 'voleon', 'renaissance', 'g-research', 'squarepoint',
   'qube', 'maven securities', 'da vinci', 'hap capital', 'valkyrie', 'eclipse trading', 'tradebot', 'jpmorgan quant',
 ];
