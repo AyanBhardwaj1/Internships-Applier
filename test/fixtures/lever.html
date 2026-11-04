@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Fixture Lever</title>
+<!-- Test fixture modelled on jobs.lever.co/<co>/<id>/apply. Not a real page. --></head><body>
+<form class="application-form" method="POST" onsubmit="event.preventDefault();document.body.innerHTML='<h3>Application submitted!</h3><p>Thanks for applying. We have received your application.</p>'">
+<ul>
+<li class="application-question resume"><div class="application-label"><div class="text">Resume/CV<span class="required">✱</span></div></div><div class="application-field"><input type="file" name="resume" style="opacity:0;position:absolute"></div></li>
+<li class="application-question"><div class="application-label"><div class="text">Full name<span class="required">✱</span></div></div><div class="application-field"><input type="text" name="name" required></div></li>
+<li class="application-question"><div class="application-label"><div class="text">Email<span class="required">✱</span></div></div><div class="application-field"><input type="email" name="email" required></div></li>
+<li class="application-question"><div class="application-label"><div class="text">Phone</div></div><div class="application-field"><input type="text" name="phone"></div></li>
+<li class="application-question"><div class="application-label"><div class="text">Current location<span class="required">✱</span></div></div><div class="application-field"><input type="text" name="location" id="location-input" required><div class="dropdown-container"></div></div></li>
+<li class="application-question"><div class="application-label"><div class="text">Current company</div></div><div class="application-field"><input type="text" name="org"></div></li>
+<li class="application-question"><div class="application-label"><div class="text">LinkedIn URL</div></div><div class="application-field"><input type="text" name="urls[LinkedIn]"></div></li>
+<li class="application-question"><div class="application-label"><div class="text">GitHub URL</div></div><div class="application-field"><input type="text" name="urls[GitHub]"></div></li>
+<li class="application-question"><div class="application-label"><div class="text">Which term are you applying for?<span class="required">✱</span></div></div><div class="application-field"><ul>
+ <li><label><input type="radio" name="cards[abc][field0]" value="Spring 2027" required>Spring 2027</label></li>
+ <li><label><input type="radio" name="cards[abc][field0]" value="Summer 2027">Summer 2027</label></li>
+ <li><label><input type="radio" name="cards[abc][field0]" value="Both">Both</label></li></ul></div></li>
+<li class="application-question"><div class="application-label"><div class="text">Are you able to work onsite in Burlingame for 12 weeks?<span class="required">✱</span></div></div><div class="application-field"><ul>
+ <li><label><input type="radio" name="cards[abc][field1]" value="Yes" required>Yes</label></li><li><label><input type="radio" name="cards[abc][field1]" value="No">No</label></li></ul></div></li>
+<li class="application-question"><div class="application-label"><div class="text">Will you require sponsorship? Please explain.<span class="required">✱</span></div></div><div class="application-field"><textarea name="cards[abc][field2]" required></textarea></div></li>
+</ul>
+<div class="eeo-section"><select name="eeo[gender]"><option value="">Select ...</option><option>Male</option><option>Female</option><option>Decline to self-identify</option></select>
+<label for="eeo-race">Race</label><select id="eeo-race" name="eeo[race]"><option value="">Select ...</option><option>Asian (Not Hispanic or Latino)</option><option>White (Not Hispanic or Latino)</option><option>Decline to self-identify</option></select>
+<label for="eeo-vet">Veteran status</label><select id="eeo-vet" name="eeo[veteran]"><option value="">Select ...</option><option>I am a veteran</option><option>I am not a veteran</option><option>Decline to self-identify</option></select></div>
+<button type="submit" id="btn-submit">Submit application</button>
+</form>
+<script>
+const li=document.getElementById('location-input');
+li.addEventListener('input',()=>{const c=li.nextElementSibling;c.innerHTML='';if(li.value.length<3)return;const r=document.createElement('ul');r.className='dropdown-results';
+['Austin, TX, USA','Austin, MN, USA'].forEach(t=>{const x=document.createElement('li');x.textContent=t;x.onclick=()=>{li.value=t;c.innerHTML=''};r.appendChild(x)});c.appendChild(r)});
+// Lever labels the gender select only via a sibling heading.
+document.querySelector('select[name="eeo[gender]"]').insertAdjacentHTML('beforebegin','<label for="g">Gender</label>');document.querySelector('select[name="eeo[gender]"]').id='g';
+</script></body></html>

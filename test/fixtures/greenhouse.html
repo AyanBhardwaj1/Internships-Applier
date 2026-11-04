@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Software Engineer Intern - Fixture Co</title>
+<!-- Test fixture modelled on the job-boards.greenhouse.io application form (react-select comboboxes, hidden file input). Not a real page. -->
+<style>.select__menu{border:1px solid #999}.select__option{padding:4px}</style></head><body>
+<h1>Software Engineer Intern (Summer 2027)</h1>
+<form id="application-form" onsubmit="event.preventDefault();document.body.innerHTML='<h2>Thank you for applying!</h2><p>Your application has been submitted.</p>';">
+<div class="field-wrapper"><label for="first_name" id="first_name-label">First Name<span class="required">*</span></label><input id="first_name" type="text" aria-required="true"></div>
+<div class="field-wrapper"><label for="last_name">Last Name*</label><input id="last_name" type="text" aria-required="true"></div>
+<div class="field-wrapper"><label for="preferred_name">Preferred First Name</label><input id="preferred_name" type="text"></div>
+<div class="field-wrapper"><label for="email">Email*</label><input id="email" type="text" aria-required="true"></div>
+<div class="field-wrapper"><label for="country" id="country-label">Country*</label>
+ <div class="select__container"><div class="select__control"><div class="select__single-value"></div><input id="country" role="combobox" aria-labelledby="country-label" aria-required="true" data-opts="United States +1|Canada +1|India +91"></div></div></div>
+<div class="field-wrapper"><label for="phone">Phone*</label><input id="phone" type="tel" aria-required="true"></div>
+<div class="field-wrapper"><label for="candidate-location" id="loc-label">Location (City)*</label>
+ <div class="select__container"><div class="select__control"><div class="select__single-value"></div><input id="candidate-location" role="combobox" aria-labelledby="loc-label" aria-required="true" data-opts="Austin, Texas, United States|Austin, Minnesota, United States" data-async="1"></div></div></div>
+<div class="field-wrapper"><label id="resume-label" for="resume">Resume/CV*</label><div class="file-upload"><button type="button">Attach</button><input id="resume" type="file" style="display:none" aria-required="true"></div></div>
+<div class="field-wrapper"><label for="cover_letter">Cover Letter</label><input id="cover_letter" type="file" style="display:none"></div>
+<div class="field-wrapper"><label for="question_1">LinkedIn Profile</label><input id="question_1" type="text"></div>
+<div class="field-wrapper"><label for="question_2">Website</label><input id="question_2" type="text"></div>
+<div class="field-wrapper"><label for="question_3" id="q3-label">Are you legally authorized to work in the United States?*</label>
+ <div class="select__container"><div class="select__control"><div class="select__single-value"></div><input id="question_3" role="combobox" aria-labelledby="q3-label" aria-required="true" data-opts="Yes|No"></div></div></div>
+<div class="field-wrapper"><label for="question_4" id="q4-label">Will you now or in the future require sponsorship for employment visa status?*</label>
+ <div class="select__container"><div class="select__control"><div class="select__single-value"></div><input id="question_4" role="combobox" aria-labelledby="q4-label" aria-required="true" data-opts="Yes|No"></div></div></div>
+<div class="field-wrapper"><label for="question_5">Why are you interested in Fixture Co?*</label><textarea id="question_5" aria-required="true"></textarea></div>
+<div class="field-wrapper"><label for="question_6" id="q6-label">How did you hear about this job?</label>
+ <div class="select__container"><div class="select__control"><div class="select__single-value"></div><input id="question_6" role="combobox" aria-labelledby="q6-label" data-opts="Company Website|LinkedIn|Referral|Other"></div></div></div>
+<fieldset><legend>I acknowledge that I have read the Candidate Privacy Policy*</legend><label><input type="checkbox" name="question_7" required> I acknowledge</label></fieldset>
+<h3>Voluntary Self-Identification</h3>
+<div class="field-wrapper"><label for="gender" id="g-label">Gender</label><div class="select__container"><div class="select__control"><div class="select__single-value"></div><input id="gender" role="combobox" aria-labelledby="g-label" data-opts="Male|Female|Decline To Self Identify"></div></div></div>
+<div class="field-wrapper"><label for="hispanic_ethnicity" id="h-label">Are you Hispanic/Latino?</label><div class="select__container"><div class="select__control"><div class="select__single-value"></div><input id="hispanic_ethnicity" role="combobox" aria-labelledby="h-label" data-opts="Yes|No|Decline To Self Identify"></div></div></div>
+<div class="field-wrapper"><label for="veteran_status" id="v-label">Veteran Status</label><div class="select__container"><div class="select__control"><div class="select__single-value"></div><input id="veteran_status" role="combobox" aria-labelledby="v-label" data-opts="I am not a protected veteran|I identify as one or more of the classifications of protected veteran|I don't wish to answer"></div></div></div>
+<div class="field-wrapper"><label for="disability_status" id="d-label">Disability Status</label><div class="select__container"><div class="select__control"><div class="select__single-value"></div><input id="disability_status" role="combobox" aria-labelledby="d-label" data-opts="Yes, I have a disability (or previously had a disability)|No, I do not have a disability and have not had one in the past|I do not want to answer"></div></div></div>
+<button type="submit">Submit application</button>
+</form>
+<script>
+// Minimal react-select imitation: click/type opens a menu of role=option divs; choosing writes .select__single-value.
+document.querySelectorAll('input[role=combobox]').forEach(inp=>{
+  const ctl=inp.closest('.select__control'); const sv=ctl.querySelector('.select__single-value');
+  const open=()=>{close(); const q=inp.value.toLowerCase(); if(inp.dataset.async&&!q) return;
+    const m=document.createElement('div'); m.className='select__menu'; m.setAttribute('role','listbox');
+    inp.dataset.opts.split('|').filter(o=>!q||o.toLowerCase().includes(q)).forEach(o=>{const d=document.createElement('div');d.className='select__option';d.setAttribute('role','option');d.textContent=o;
+      d.onmousedown=e=>{e.preventDefault();sv.textContent=o;inp.value='';close();}; m.appendChild(d)});
+    ctl.after(m); inp._m=m;};
+  const close=()=>{document.querySelectorAll('.select__menu').forEach(x=>x.remove())};
+  inp.addEventListener('click',open); inp.addEventListener('input',()=>setTimeout(open,200));
+  inp.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+});
+</script></body></html>

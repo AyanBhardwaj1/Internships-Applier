@@ -1,0 +1,131 @@
+{
+  "_source": "EXAMPLE profile with fake data. Copy to private/profile.json and fill in real values (private/ is gitignored).",
+  "name": {
+    "first": "Alex",
+    "last": "Example",
+    "full": "Alex Example",
+    "preferred": "Alex",
+    "pronouns": "They/them"
+  },
+  "email": "alex@example.edu",
+  "phone": {
+    "display": "(555) 010-0000",
+    "e164": "+15550100000",
+    "digits": "5550100000",
+    "country": "United States +1"
+  },
+  "location": {
+    "city": "Austin",
+    "state": "Texas",
+    "stateCode": "TX",
+    "country": "United States",
+    "display": "Austin, Texas, United States",
+    "short": "Austin, TX, USA"
+  },
+  "permanentAddress": {
+    "line1": "1 Example St",
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78701",
+    "country": "United States"
+  },
+  "links": {
+    "linkedin": "https://www.linkedin.com/in/example",
+    "github": "https://github.com/example",
+    "website": "https://github.com/example",
+    "portfolio": ""
+  },
+  "education": {
+    "school": "The University of Texas at Austin",
+    "schoolShort": "University of Texas - Austin",
+    "degree": "Bachelor's Degree",
+    "degreeLong": "B.S. Computer Science Honors & B.B.A. Canfield Business Honors (CSB Honors Program)",
+    "major": "Computer Science",
+    "secondMajor": "Business Administration",
+    "gpa": "4.0",
+    "gpaScale": "4.0",
+    "start": {
+      "month": 8,
+      "year": 2026,
+      "text": "August 2026"
+    },
+    "graduation": {
+      "month": 5,
+      "year": 2029,
+      "text": "May 2029",
+      "iso": "2029-05-15",
+      "season": "Spring 2029"
+    },
+    "classYear": "Freshman",
+    "classYearNote": "First-year by enrollment; graduates May 2029 (3-year plan). Never pick a different grad year to fit a form."
+  },
+  "workAuth": {
+    "authorizedUS": true,
+    "needsSponsorship": false,
+    "citizenship": "U.S. Citizen",
+    "usPerson": true,
+    "activeClearance": false,
+    "clearanceEligible": true,
+    "priorGovernmentEmployment": false
+  },
+  "availability": {
+    "term": "Summer 2027",
+    "start": "2027-05-17",
+    "end": "2027-09-15",
+    "text": "Available for Summer 2027 (May 17 to mid-September 2027).",
+    "fullTime": true,
+    "willingToRelocate": true,
+    "onsite": true,
+    "over18": true
+  },
+  "eeo": {
+    "gender": "Male",
+    "genderIdentity": "Man",
+    "transgender": null,
+    "sexualOrientation": null,
+    "hispanic": false,
+    "race": "Asian",
+    "raceLong": "Asian (Not Hispanic or Latino)",
+    "veteran": "I am not a protected veteran",
+    "disability": "No, I do not have a disability and have not had one in the past"
+  },
+  "defaults": {
+    "howDidYouHear": "LinkedIn",
+    "smsConsent": false,
+    "marketingOptIn": false,
+    "currentCompany": "",
+    "currentTitle": "",
+    "yearsExperience": "1",
+    "languages": "English, Hindi",
+    "previouslyWorkedHere": false,
+    "relativesAtCompany": false,
+    "nonCompete": false,
+    "finalInternship": false
+  },
+  "experience": [
+    {
+      "company": "Example Co",
+      "title": "Software Engineering Intern",
+      "start": "2026-05",
+      "end": "2026-08",
+      "location": "Remote"
+    }
+  ],
+  "resumes": {
+    "swe": {
+      "file": "test/fixtures/dummy-resume.pdf",
+      "uploadName": "Alex_Example -- Resume.pdf",
+      "use": "default: SWE, backend, full-stack, infra, data eng"
+    },
+    "ml": {
+      "file": "test/fixtures/dummy-resume.pdf",
+      "uploadName": "Alex_Example -- Resume.pdf",
+      "use": "ML / AI / applied AI / research engineering"
+    },
+    "pm": {
+      "file": "test/fixtures/dummy-resume.pdf",
+      "uploadName": "Alex_Example -- Resume.pdf",
+      "use": "product management / APM / TPM"
+    }
+  }
+}

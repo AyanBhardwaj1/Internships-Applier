@@ -1,0 +1,12 @@
+{
+  "name": "internships-applier",
+  "private": true,
+  "type": "module",
+  "description": "Cloud internship applier: scan Summer 2027 postings, fill Greenhouse/Lever/Ashby forms headlessly, submit only what Ayan names.",
+  "scripts": {
+    "test": "node test/unit.test.mjs && node test/fixtures.test.mjs",
+    "doctor": "./apply doctor",
+    "scan": "./apply scan"
+  },
+  "engines": { "node": ">=22" }
+}

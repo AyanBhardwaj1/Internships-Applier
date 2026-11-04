@@ -1,0 +1,5 @@
+# Personal data never goes to git (this repo is public).
+private/
+node_modules/
+*.log
+.DS_Store

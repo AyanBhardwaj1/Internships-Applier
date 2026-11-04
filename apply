@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Wrapper: routes Node's fetch through the cloud proxy, then runs the CLI.
+export NODE_USE_ENV_PROXY=1 NODE_NO_WARNINGS=1
+exec node "$(dirname "$0")/bin/apply.mjs" "$@"

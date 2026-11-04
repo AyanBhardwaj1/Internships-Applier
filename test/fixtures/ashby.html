@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Fixture Ashby</title>
+<!-- Test fixture modelled on jobs.ashbyhq.com/<co>/<id>/application (Yes/No buttons, field-entry wrappers). Not a real page. --></head><body>
+<div class="ashby-application-form-container"><form onsubmit="return false">
+<div class="ashby-application-form-field-entry"><label class="ashby-application-form-question-title" for="_systemfield_name">Name<span>*</span></label><input id="_systemfield_name" name="_systemfield_name" required></div>
+<div class="ashby-application-form-field-entry"><label class="ashby-application-form-question-title" for="_systemfield_email">Email<span>*</span></label><input id="_systemfield_email" type="email" required></div>
+<div class="ashby-application-form-field-entry"><label class="ashby-application-form-question-title" for="_systemfield_resume">Resume<span>*</span></label><input id="_systemfield_resume" type="file" required style="display:none"><button type="button">Upload File</button></div>
+<div class="ashby-application-form-field-entry"><label class="ashby-application-form-question-title" for="ph">Phone Number</label><input id="ph" type="tel"></div>
+<div class="ashby-application-form-field-entry"><label class="ashby-application-form-question-title" for="li">LinkedIn Profile</label><input id="li"></div>
+<div class="ashby-application-form-field-entry"><label class="ashby-application-form-question-title">Will you now or in the future require visa sponsorship?<span>*</span></label>
+ <div class="_yesno_x"><button type="button" class="_option_">Yes</button><button type="button" class="_option_">No</button></div></div>
+<div class="ashby-application-form-field-entry"><label class="ashby-application-form-question-title">Are you willing to work in person at our NYC office 5 days a week?<span>*</span></label>
+ <div class="_yesno_x"><button type="button" class="_option_">Yes</button><button type="button" class="_option_">No</button></div></div>
+<div class="ashby-application-form-field-entry"><label class="ashby-application-form-question-title" for="ms">What's the most impressive thing you've built?<span>*</span></label><textarea id="ms" required></textarea></div>
+<div class="ashby-application-form-field-entry"><fieldset><legend class="ashby-application-form-question-title">When do you expect to graduate?<span>*</span></legend>
+ <label><input type="radio" name="grad" value="2027">2027</label><label><input type="radio" name="grad" value="2028">2028</label></fieldset></div>
+<button type="submit" class="ashby-application-form-submit-button">Submit Application</button>
+</form></div>
+<script>document.querySelectorAll('._yesno_x button').forEach(b=>b.onclick=()=>{b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('_active_'));b.classList.add('_active_')});
+document.querySelector('form').onsubmit=e=>{e.preventDefault();document.body.innerHTML='<p>Thanks for your interest! Your application was successfully submitted.</p>'};</script>
+</body></html>
