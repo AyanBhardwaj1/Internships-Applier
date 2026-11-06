@@ -21,7 +21,7 @@ export const FINANCE_FIRMS = [
   'invesco', 'capital one', 'american express', 'us bank', 'u.s. bank', 'pnc', 'truist', 'regions', 'fifth third', 'keybank',
   'citizens bank', 'santander', 'ally', 'discover financial', 'synchrony', 'raymond james', 'edward jones', 'jefferies',
   'lazard', 'evercore', 'piper sandler', 'moelis', 'oliver wyman', 'blackstone', 'kkr', 'apollo', 'carlyle', 'bridgewater',
-  'aqr', 'dimensional', 'mfs', 'nuveen', 't. rowe', 't rowe', 'franklin templeton', 'prudential', 'metlife',
+  'aqr', 'dimensional', 'gcm grosvenor', 'national life', 'national life group', 'drivewealth', 'robinhood markets', 'mfs', 'nuveen', 't. rowe', 't rowe', 'franklin templeton', 'prudential', 'metlife',
 ];
 
 // Per-company application caps / holds noted in the Desk.

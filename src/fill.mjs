@@ -221,10 +221,24 @@ async function captchaState(page) {
     const vis = el => { const r = el.getBoundingClientRect(); return r.width > 30 && r.height > 30 && getComputedStyle(el).visibility !== 'hidden'; };
     const frames = [...document.querySelectorAll('iframe')];
     const challenge = frames.some(f => /recaptcha\/(api2|enterprise)\/bframe|hcaptcha\.com.*(challenge|frame=challenge)|challenges\.cloudflare\.com/.test(f.src) && vis(f));
-    const checkbox = frames.some(f => /recaptcha\/(api2|enterprise)\/anchor|hcaptcha\.com.*checkbox|turnstile/.test(f.src) && vis(f));
+    // An invisible reCAPTCHA's anchor frame is just the badge, not a checkbox.
+    const checkbox = frames.some(f => (/recaptcha\/(api2|enterprise)\/anchor/.test(f.src) && !/size=invisible/.test(f.src) || /hcaptcha\.com.*checkbox|turnstile/.test(f.src)) && vis(f));
     const invisible = frames.some(f => /recaptcha|hcaptcha/.test(f.src));
     return { challenge, checkbox, invisible };
   }).catch(() => ({ challenge: false, checkbox: false, invisible: false }));
+}
+
+/** What anti-bot protection a form loads. 'none' forms submit reliably from the cloud. */
+async function captchaKind(page) {
+  return page.evaluate(() => {
+    const srcs = [...document.querySelectorAll('iframe, script')].map(e => e.src || '').join(' ');
+    const html = document.documentElement.innerHTML;
+    if (/captcha-delivery|datadome/i.test(srcs + html)) return 'datadome';
+    if (/hcaptcha/i.test(srcs)) return 'hcaptcha';
+    if (/challenges\.cloudflare|turnstile/i.test(srcs)) return 'turnstile';
+    if (/recaptcha/i.test(srcs)) return /size=invisible|render=/.test(srcs) ? 'recaptcha-invisible' : 'recaptcha';
+    return 'none';
+  }).catch(() => 'unknown');
 }
 
 async function preparePage(page, ats) {
@@ -292,6 +306,9 @@ export async function runApplication(item, { mode = 'fill', profile, headless = 
       report.status = 'closed'; report.notes.push(`Posting looks closed or missing (HTTP ${resp?.status()})`); await shot('closed'); return report;
     }
     await preparePage(page, ats);
+    await sleep(1500);
+    report.captchaKind = await captchaKind(page);
+    if (mode === 'probe') { report.status = 'probed'; return report; }
     let fields = await page.evaluate(collectInPage);
     if (!fields.some(f => f.type === 'file') && !fields.some(f => /e-?mail/i.test(f.label))) {
       report.status = 'no_form'; report.notes.push('No application form found on the page'); await shot('no-form'); return report;

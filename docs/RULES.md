@@ -41,6 +41,11 @@ These are Ayan's standing rules, carried over from the Career-Ops setup on his M
 - Leave "Current company" blank.
 
 ## Submitting
+- **Standing approval for new finds (2026-11-06):** Ayan said "keep finding more and applying to them with cloud,
+  prioritize ones that won't have a captcha". `./apply auto` may submit newly found postings that pass every rule
+  above *and* fill completely from profile facts (no essays, nothing blank). Forms needing an essay or any
+  judgment call wait in the queue for him. Boards are probed for anti-bot protection first, and boards with no
+  CAPTCHA go first.
 - **Submit-by-text (2026-11-03):** submit an application only when Ayan names it in a message
   ("submit Samsara, Lyft") or approves it on the Desk and then says "submit the approved ones".
   "Submit all" covers only what's filled and ready at that moment.

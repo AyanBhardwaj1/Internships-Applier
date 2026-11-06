@@ -35,6 +35,7 @@ function trackerUpsert(row) {
 }
 
 const COMMANDS = {
+  auto: () => auto(),
   async doctor() {
     // Probe real paths with redirects off: site roots redirect to marketing domains we don't need.
     const hosts = ['https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/README.md', 'https://job-boards.greenhouse.io/figma', 'https://boards-api.greenhouse.io/v1/boards/figma/jobs',
@@ -126,6 +127,74 @@ const COMMANDS = {
   },
 };
 
+
+// ---------------------------------------------------------------- auto pipeline
+// Standing approval (Ayan, 2026-11-06): "keep finding more and applying to them with cloud, prioritize
+// ones that won't have a captcha". Auto-submits ONLY forms that fill completely from profile facts
+// (no essays, no blanks); everything else waits in the queue for him.
+const CAPTCHA_CACHE = path.join(P.cache, 'captcha-by-board.json');
+const RANK = { none: 0, 'recaptcha-invisible': 1, recaptcha: 3, unknown: 2, hcaptcha: 4, turnstile: 4, datadome: 5 };
+async function auto() {
+  const { scan } = await import('../src/scan.mjs');
+  const { runApplication } = await import('../src/fill.mjs');
+  const prof = profile();
+  const maxSubmit = Number(flag('max-submit', 15)), maxProbe = Number(flag('probe', 60)), dry = !!flag('dry'), sweOnly = !!flag('swe');
+  const allowRecaptcha = !flag('none-only');
+  const cache = readJSON(CAPTCHA_CACHE, {});
+  const r = flag('no-scan') ? readJSON(P.candidates, { jobs: [] }) : await scan({ sources: ['simplify'] });
+  const queued = new Set(loadQueue().map(q => q.id));
+  let cands = r.jobs.filter(j => j.ok && !j.hold && !queued.has(j.id) && ['greenhouse', 'ashby'].includes(j.ats));
+  { const seen = new Set(); cands = cands.filter(j => { const k = (j.company + '|' + j.title).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; }); }
+  if (sweOnly) cands = cands.filter(j => /software|swe|sde|developer|backend|full[- ]?stack|frontend|platform|infrastructure|engineer/i.test(j.title) && !/product manag/i.test(j.title));
+  const boardOf = j => { const d = detectATS(j.url); return `${d.ats}:${d.board}`.toLowerCase(); };
+  // probe one posting per board we haven't seen
+  let probed = 0;
+  // Probe Ashby boards first: they are the ones that can submit from the cloud.
+  const probeOrder = [...cands].sort((a, b) => (a.ats === 'ashby' ? 0 : 1) - (b.ats === 'ashby' ? 0 : 1));
+  for (const j of probeOrder) {
+    const b = boardOf(j);
+    if (cache[b] || probed >= maxProbe) continue;
+    const rep = await runApplication({ id: j.id, company: j.company, title: j.title, url: j.url, resume: j.resume }, { mode: 'probe', profile: prof, outDir: path.join(P.runsDir, 'probe-' + b.replace(/[^\w]+/g, '_')) });
+    cache[b] = { kind: rep.status === 'closed' ? 'closed-sample' : (rep.captchaKind || 'unknown'), at: today(), sample: j.url };
+    probed++; writeJSON(CAPTCHA_CACHE, cache);
+    console.log(`probe ${b}: ${cache[b].kind}`);
+  }
+  const kindOf = j => cache[boardOf(j)]?.kind || 'unknown';
+  // Greenhouse with reCAPTCHA falls back to an emailed human-verification code from the cloud, so only
+  // Greenhouse boards with no CAPTCHA at all qualify. Ashby invisible reCAPTCHA often passes.
+  const ok = cands.filter(j => { const k = kindOf(j); return k === 'none' || (allowRecaptcha && k === 'recaptcha-invisible' && j.ats === 'ashby'); })
+    .sort((a, b) => (RANK[kindOf(a)] - RANK[kindOf(b)]) || ((b.score || 0) - (a.score || 0)));
+  console.log(`candidates: ${cands.length} · submit-friendly: ${ok.length} (none: ${ok.filter(j => kindOf(j) === 'none').length})`);
+  const results = []; let submitted = 0;
+  for (const j of ok) {
+    if (submitted >= maxSubmit) break;
+    const slug = slugify(`${j.company}-${j.title}`).slice(0, 48) + '-' + j.id.split(':').pop().slice(-6);
+    const it = { slug, id: j.id, company: j.company, title: j.title, url: j.url, applyUrl: applyUrl(j.url), ats: j.ats, locations: j.locations, terms: j.terms,
+      resume: j.resume, score: j.score, status: 'new', approved: false, overrides: {}, asks: [], notes: [], addedAt: nowISO(), history: [], origin: 'auto', captchaKind: kindOf(j) };
+    const fillRep = await runApplication(it, { mode: 'fill', profile: prof });
+    Object.assign(it, { status: fillRep.status, asks: fillRep.asks, questions: fillRep.questions, filled: fillRep.filled, blankRequired: fillRep.blankRequired, notes: fillRep.notes,
+      lastRun: { mode: 'fill', at: fillRep.finishedAt, status: fillRep.status, screenshots: fillRep.screenshots } });
+    it.history.push({ at: nowISO(), mode: 'fill', status: fillRep.status });
+    const essays = (fillRep.asks || []).some(a => a.required);
+    if (fillRep.status === 'ready' && !essays && !dry) {
+      const subRep = await runApplication(it, { mode: 'submit', profile: prof });
+      it.status = subRep.status; it.notes = subRep.notes; it.lastRun = { mode: 'submit', at: subRep.finishedAt, status: subRep.status, screenshots: subRep.screenshots };
+      it.history.push({ at: nowISO(), mode: 'submit', status: subRep.status });
+      if (subRep.status === 'submitted') {
+        submitted++; it.submittedAt = nowISO();
+        trackerUpsert({ id: it.slug, company: it.company, role: it.title, url: it.url, urlKey: it.id, location: (it.locations || [])[0] || null, stage: 'applied', outcome: 'applied',
+          history: [{ at: today(), stage: 'applied' }], appliedAt: today(), score: it.score, note: 'Auto-submitted from cloud (standing approval 2026-11-06)', source: 'cloud', submittedBy: 'claude-cloud' });
+      }
+      // learn: a challenge means this board is not submit-friendly
+      if (subRep.status === 'captcha' || (subRep.status === 'unknown' && j.ats === 'greenhouse')) { const b = boardOf(j); cache[b] = { ...(cache[b] || {}), kind: 'challenged', at: today() }; writeJSON(CAPTCHA_CACHE, cache); }
+    }
+    saveItem(it);
+    console.log(`${it.status.padEnd(12)} ${j.company} — ${j.title} [${kindOf(j)}]${it.status === 'needs_input' ? ' (needs: ' + (fillRep.asks || []).filter(a => a.required).map(a => a.q.slice(0, 40)).join('; ') + ')' : ''}`);
+    results.push({ company: j.company, title: j.title, status: it.status });
+  }
+  console.log(`\nsubmitted ${submitted} · ` + Object.entries(results.reduce((a, x) => (a[x.status] = (a[x.status] || 0) + 1, a), {})).map(([k, v]) => `${k} ${v}`).join(' · '));
+}
+
 async function run(mode) {
   const { runApplication } = await import('../src/fill.mjs');
   const prof = profile();
@@ -170,7 +239,8 @@ if (!cmd || !COMMANDS[cmd]) {
   submit <slug..>|--approved  submit ONLY the named/approved applications
   skip <slug..>               drop from queue
   status                      tracker summary (live processes)
-  track <id|company> <outcome> [note]`);
+  track <id|company> <outcome> [note]
+  auto [--max-submit N] [--probe N] [--swe] [--none-only] [--dry]  scan → probe CAPTCHA → fill → submit complete ones`);
   process.exit(cmd ? 1 : 0);
 }
 await COMMANDS[cmd]();
