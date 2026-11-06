@@ -172,6 +172,7 @@ async function act(page, f, ans, resumePath) {
         if (pick) await page.locator(`[data-ia-opt="${opts.indexOf(pick)}"]`).first().click().catch(() => {});
       }
       await el.evaluate(e => e.blur()).catch(() => {});
+      if (/date/i.test(f.label)) await page.keyboard.press('Escape').catch(() => {}); // close date pickers
       return String(ans.text);
     }
     case 'combobox': {
@@ -293,7 +294,7 @@ export async function runApplication(item, { mode = 'fill', profile, headless = 
     }
     // Attach the resume first: on many Ashby/Greenhouse boards it triggers "autofill from resume", which re-renders
     // the form. Then wait for that to settle and re-read the fields before filling anything else.
-    let resumeDone = false;
+    let resumeDone = false, stillStudent = false;
     if (mode !== 'inspect') {
       const rf = fields.find(f => f.type === 'file' && /\b(resume|cv)\b/i.test(f.label));
       if (rf) {
@@ -313,6 +314,7 @@ export async function runApplication(item, { mode = 'fill', profile, headless = 
     for (const f of fields) {
       if (!f.visible && f.type !== 'file') continue;
       if (resumeDone && f.type === 'file' && /\b(resume|cv)\b/i.test(f.label)) continue;
+      if (stillStudent && /^end (date|month|year)/i.test(f.label.trim())) { report.skipped.push(f.label + ' (Still Student ticked)'); continue; }
       const ans = answerFor(profile, f, item, item.overrides);
       if (ans.skip) { report.skipped.push(f.label); continue; }
       if (ans.ask && !ans.choose && !ans.text && !ans.check) { report.asks.push({ q: f.label, why: ans.ask, required: f.required, options: f.options.slice(0, 15) }); continue; }
@@ -329,6 +331,7 @@ export async function runApplication(item, { mode = 'fill', profile, headless = 
       try {
         dbg('field', f.type, f.label.slice(0, 60));
         const done = await withTimeout(act(page, f, ans, resumePath), 25000, f.label.slice(0, 40));
+        if (done === 'checked' && /still (a )?student|currently attend/i.test(f.label)) stillStudent = true;
         if (done != null) report.filled.push({ q: f.label, a: done });
         else if (f.required) report.asks.push({ q: f.label, why: ans.ask || 'Could not match any option', required: true, options: f.options.slice(0, 15) });
         if (ans.ask && done != null) report.notes.push(`Check "${f.label}": ${ans.ask} (entered ${done})`);
