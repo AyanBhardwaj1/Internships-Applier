@@ -24,7 +24,7 @@ export const RULES = [
 
   // ---- specific questions that broader rules below would otherwise catch
   { when: /^if (yes|so|applicable)\b|^if you (answered|selected) yes/, a: (p, f) => f.required ? { ask: 'Follow-up to a yes/no question' } : { skip: true } },
-  { not: /graduat/, when: /currently enrolled|enrolled (in|as) (a|an)? ?(full[- ]time )?(student|undergraduate|degree)|are you (a )?current(ly)? (a )?student/, a: () => ({ choose: ['Yes'] }) },
+  { not: /graduation date|expected graduat|when .*graduat|graduat.*(date|year|when)/, when: /currently enrolled|enrolled (in|as) (a|an)? ?(full[- ]time )?(student|undergraduate|degree)|are you (a )?current(ly)? (a )?student/, a: () => ({ choose: ['Yes'] }) },
   { when: /returning to school|return to (school|your studies)|continuing (your )?(education|studies) after/, a: () => ({ choose: ['Yes'] }) },
   { when: /highest (level of )?education (you have )?completed|highest degree (completed|earned|obtained)/, a: () => ({ choose: ['High school or equivalency diploma', 'High School Diploma', 'High school', 'High School or equivalent'] }) },
   { when: /comfortable (using|with) git|version control|use git\b/, a: () => ({ choose: ['Yes'] }) },
@@ -52,7 +52,7 @@ export const RULES = [
   { when: /f-?1 (status|visa)|curricular practical training|\bcpt\b|\bopt\b/, a: () => ({ choose: ['No'] }) },
   { when: /(full[- ]time|return offer).*(what year|which year|when).*(start|available)|(what year|which year) .*(start|available).*(full[- ]time|return)/, a: p => ({ text: String(p.education.graduation.year), choose: [String(p.education.graduation.year), `Summer ${p.education.graduation.year}`, `${p.education.graduation.year}`] }) },
   { when: /(available|able|commit).*(summer|internship).*(may|june|2027)|commit to (attending )?the full .*(program|internship)/, a: () => ({ choose: ['Yes'] }) },
-  { when: /intern(ship)? position .*or .*co-?op|intern or co-?op|internship or co-?op/, a: () => ({ choose: ['Intern', 'Internship', 'Intern position'] }) },
+  { when: /intern(ship)? position .*or .*co-?op|interested in (an )?(intern|internship) or (a )?co-?op/, a: () => ({ choose: ['Intern', 'Internship', 'Intern position'] }) },
   { when: /what type of position|position type|type of (role|job) (are you )?applying/, a: () => ({ text: 'Internship', choose: ['Internship', 'Intern', 'Summer Internship'] }) },
   { when: /(desired|expected) (salary|pay|compensation)|salary (requirement|expectation)|compensation expectation|pay expectation/, a: () => ({ text: 'Open to the posted range for this internship', choose: ['Open', 'Negotiable'] }) },
   { when: /(okay|ok|comfortable|happy) (spending|working|being|living)|(commit to|willing to) (living|live|relocat)|commutable distance/, a: () => ({ choose: ['Yes'] }) },
@@ -60,14 +60,24 @@ export const RULES = [
   { when: /california residents|ccpa|privacy notice for california/, a: () => ({ check: true, choose: ['I acknowledge', 'Acknowledge', 'Yes', 'I Acknowledge', 'I agree'] }) },
   { when: /state or (canadian )?province (do you )?resid|which (u\.?s\.? )?state (do )?you (reside|live)|state of residence/, a: () => ({ text: 'Texas', choose: ['Texas', 'TX'] }) },
   { when: /^if you (answered|selected|chose)\b|^if (other|no|yes)\b|please specify (details )?(from )?(your answer )?above|if you selected other/, a: (p, f) => f.required ? { text: 'N/A' } : { skip: true } },
-  { when: /(which|what) (of our )?office|office\(?s\)? .*(willing|relocate|prefer|work from)|preferred (work )?location|work location preference|location preference/, a: () => ({ choose: ['Austin', 'Texas', 'TX', 'Remote', 'Dallas'] }) },
-  { when: /(current or (most recent|previous)|most recent|previous) (employer|company)/, a: p => ({ text: p.experience[0].company.replace(/\s*\(.*\)$/, '') }) },
-  { when: /(current or (most recent|previous)|most recent|previous) (job )?title/, a: p => ({ text: p.experience[0].title }) },
+  { when: /(which|what) (of our )?office|office\(?s\)? .*(willing|relocate|prefer|work from)|preferred (work )?location|work location preference|location preference/, a: () => ({ choose: ['Austin', 'Texas', 'TX', 'Dallas', 'I am open to working in any office', 'Open to any office', 'Open to any location', 'Any office', 'Any location', 'No preference', 'Remote'] }) },
+  { when: /(current or (most recent|previous)|most recent|previous) (employer|company)|^company name$|^employer( name)?$|most recently work/, a: p => ({ text: p.experience[0].company.replace(/\s*\(.*\)$/, '') }) },
+  { when: /(current or (most recent|previous)|most recent|previous) (job )?title|^(job )?title$/, a: p => ({ text: p.experience[0].title }) },
   { when: /country (where|in which) you (currently )?(reside|live)|country of (current )?residence/, a: () => ({ choose: ['United States', 'United States of America', 'USA', 'US'], text: 'United States' }) },
+  { when: /(graduat|degree)\w* .*\b(20\d\d) or later\b/, a: (p, f) => { const y = Number(norm(f.label).match(/(20\d\d) or later/)[1]); return { choose: [p.education.graduation.year >= y ? 'Yes' : 'No'] }; } },
+  { when: /full[- ]time (role|position|offer|opportunit).* (in|during) (20\d\d)/, a: (p, f) => { const y = Number(norm(f.label).match(/(20\d\d)/)[1]); return { choose: [y >= p.education.graduation.year ? 'Yes' : 'No'] }; } },
+  { when: /how many (prior |previous )?internship/, a: () => ({ text: '2', choose: ['2', '2-3', '1-2', 'Two'] }) },
+  { when: /export (compliance|control)|u\.?s\.? person/, a: () => ({ choose: ['I am currently a "U.S. Person"', 'I am a U.S. Person', 'U.S. Citizen', 'US Citizen', 'Yes'] }) },
+  { when: /auditor independence|pwc|pricewaterhouse/, a: () => ({ choose: ['No - I have never been employed by PwC', 'No'] }) },
+  { when: /redact|age-identifying/, a: () => ({ check: true, choose: ['I Acknowledge', 'I acknowledge', 'Acknowledge'] }) },
+  { when: /winter or summer|summer or winter|summer or fall|fall or summer/, a: () => ({ choose: ['Summer', 'Summer 2027'] }) },
+  { when: /reside within \d+ miles|hub (location|advertised)/, a: () => ({ choose: ['N/A - I am not in one of the hub locations but I AM able to relocate'] }) },
+  { when: /previous (work )?experience in software|prior (work )?experience in software|worked as a software/, a: () => ({ choose: ['Yes'] }) },
+  { when: /dates? (are you |you are )?available.*(start|finish|end)|internship availability.*(start|end)|start (date )?and end date/, a: () => ({ text: 'May 17, 2027 to September 15, 2027' }) },
   // ---- identity / contact
   { when: /^(legal )?first name|^given name|^first$/, a: p => ({ text: p.name.first }) },
   { when: /^(legal )?last name|^surname|^family name|^last$/, a: p => ({ text: p.name.last }) },
-  { when: /preferred (first )?name|nickname|name you go by/, a: p => ({ text: p.name.preferred }) },
+  { when: /preferred (first )?name|chosen name|nickname|name you go by/, a: p => ({ text: p.name.preferred }) },
   { when: /legal name.*(if different|different from)/, a: () => ({ skip: true }) },
   { when: /^(full |legal |your )?(full )?name$|^full legal name|^name\b(?!.*(company|school|reference|employer|manager))/, a: p => ({ text: p.name.full }) },
   { when: /pronoun/, a: p => ({ choose: ['He/him', 'He/Him/His', 'he/him'], text: p.name.pronouns }) },
@@ -81,12 +91,12 @@ export const RULES = [
   { when: /portfolio|personal (web)?site|^website|website url|other (website|link)|^urls?$|blog/, a: p => ({ text: p.links.website }) },
 
   // ---- location / address
-  { when: /street|address line|^address$|mailing address|permanent address/, a: p => ({ text: `${p.permanentAddress.line1}, ${p.permanentAddress.city}, ${p.permanentAddress.state} ${p.permanentAddress.zip}` }) },
+  { when: /street|address line|^address$|mailing address|permanent address|legal address|home address/, a: p => ({ text: `${p.permanentAddress.line1}, ${p.permanentAddress.city}, ${p.permanentAddress.state} ${p.permanentAddress.zip}` }) },
   { when: /zip|postal/, a: p => ({ text: p.permanentAddress.zip }) },
   { when: /^state$|state of residence|^state\/province|^province/, not: /city/, a: () => ({ choose: ['Texas', 'TX'] }) },
   { when: /^city$/, a: p => ({ text: p.location.city }) },
   { when: /^country$|country of residence|which country.*(live|reside)|^country\b/, a: () => ({ choose: ['United States', 'United States of America', 'USA', 'US'] }) },
-  { when: /willing to relocate|open to relocat|relocation/, a: () => ({ choose: ['Yes', 'Yes, I am willing to relocate'] }) },
+  { when: /willing to relocate|open to relocat|relocation|able to relocate|can you relocate/, a: () => ({ choose: ['Yes', 'Yes, I am willing to relocate'] }) },
   { when: /(able|willing|open|comfortable|available|plan).*(on-?site|in[- ]office|in[- ]person|commute|office \d|days (a|per) week)|work(ing)? (on-?site|in[- ]person|in (the|our|an) office|from (the |our )?[\w ,.]*office)|hybrid|days (a|per) week/, a: () => ({ choose: ['Yes', 'Yes, I am able', 'Yes, I can'] }) },
   { when: /^(current )?location\b|your location|where are you (currently )?(located|based)|city.*state|city you live/, a: p => ({ text: 'Austin, TX', typeText: 'Austin', choose: ['Austin, Texas, United States', 'Austin, TX, USA', 'Austin, TX', 'Austin, Texas'], autocomplete: true }) },
 
@@ -100,13 +110,13 @@ export const RULES = [
   { when: /(government|federal) (employ|official)|worked for the (us |u\.s\. )?government|prior government/, a: () => ({ choose: no }) },
 
   // ---- education
-  { when: /school|university|college|institution/, not: /high school|degree|major|gpa|graduat|year|level|start|end/, a: p => ({ text: p.education.school, choose: [p.education.school, 'University of Texas at Austin', p.education.schoolShort, 'University of Texas - Austin', 'UT Austin'], autocomplete: true }) },
+  { when: /school|university|college|institution/, not: /high school|degree|major|gpa|graduat|\byear|level|\bstart\b|\bend\b|returning|district/, a: p => ({ text: p.education.school, choose: [p.education.school, 'University of Texas at Austin', p.education.schoolShort, 'University of Texas - Austin', 'UT Austin'], autocomplete: true }) },
   { when: /degree (type|level)|^degree$|highest (level of )?(education|degree)|level of (study|education)|pursuing.*degree/, a: () => ({ choose: ["Bachelor's Degree", "Bachelor's", 'Bachelors', 'Bachelor of Science', 'BS', 'B.S.', 'Undergraduate'] }) },
   { when: /discipline|major|field of study|area of study|concentration/, a: p => ({ text: p.education.major, choose: ['Computer Science', 'Computer Science and Engineering', 'Computer Engineering'] }) },
-  { when: /\bgpa\b|grade point/, a: p => ({ text: p.education.gpa, choose: ['4.0', '3.9 - 4.0', '3.8 - 4.0', '3.75 - 4.0', '3.7 - 4.0', '3.5 - 4.0', '3.5+', '4.0 or above', '>=3.7', '3.5 or above', 'Above 3.5'] }) },
+  { when: /\bgpa\b|grade point/, a: p => ({ text: p.education.gpa, choose: ['4.0', '3.9 - 4.0', '3.8 - 4.0', '3.75 - 4.0', '3.7 - 4.0', '3.5 - 4.0', '3.5+', '4.0 or above', '>=3.7', '3.5 or above', 'Above 3.5', '3.75 - 4', '3.75 - 4.00', '3.75+', '3.75 and above', '3.9 - 4', '3.8 - 4', '3.7 - 4', '3.5 - 4', '4', '4.00'] }) },
   { when: /graduat.*(year)|year.*graduat|class of/, a: p => ({ text: String(p.education.graduation.year), choose: [String(p.education.graduation.year), 'Class of 2029', 'Spring 2029', 'May 2029'], gradGate: true }) },
   { when: /graduat.*(month)/, a: () => ({ choose: ['May', '05', '5'], text: 'May' }) },
-  { when: /graduat|expected (completion|end)|degree completion/, a: p => ({ text: '05/15/2029', choose: ['May 2029', 'Spring 2029', '2029', '05/2029'], gradGate: true }) },
+  { when: /graduat|expected (completion|end)|degree completion/, a: p => ({ text: '05/15/2029', choose: ['May 2029', 'Spring 2029', '2029', '05/2029', '2029 or later', 'Spring 2029 or later', 'After Fall 2028', 'After Summer 2028', 'After Spring 2028', 'After 2028', 'Later than 2028'], gradGate: true }) },
   { when: /start (date|year|month).*(school|degree|education|university)|(school|degree|education).*start/, a: p => ({ text: p.education.start.text, choose: ['2026', 'August 2026', 'Fall 2026'] }) },
   { when: /(current|what) (year|grade|class standing|academic (year|standing))|year in school|class standing|academic level/, a: () => ({ choose: ['Freshman', 'First Year', 'First-year', '1st Year', 'Sophomore'], ask: 'Class-year question: he is a first-year graduating May 2029; confirm which option fits' }) },
 
@@ -119,7 +129,7 @@ export const RULES = [
   { when: /final internship|last internship before graduat/, a: () => ({ choose: no }) },
 
   // ---- history / relationships
-  { when: /(previously|ever|before|have you).*(work|employ|intern)(ed|ing)? (for|at|with)\b|worked (here|for us) before|former employee|current or former|(are|were) you (a |an )?(current|former)/,
+  { when: /(previously|ever|before|have you).*(work|employ|intern)(ed|ing)? (for|at|with|by|in)\b|worked (here|for us) before|former employee|current or former|(are|were) you (a |an )?(current|former)/,
     a: (p, f, job) => {
       const q = norm(f.label), co = norm(job.company || '').split(' ')[0];
       if (/(for|at) (us|our|the company|this company)|here|former employee|current or former|(current|former) (employee|intern|contractor)/.test(q) || (co && co.length > 2 && q.includes(co))) return { choose: ['No', 'I have never worked', 'No, I have not'] };
@@ -154,7 +164,7 @@ export const RULES = [
 
 export function norm(q) {
   return String(q || '').toLowerCase().replace(/[‘’]/g, "'").replace(/\(required\)|required|[*✱]/g, '')
-    .replace(/\s+/g, ' ').trim();
+    .replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ').trim();
 }
 
 /** overrides: { [normalisedQuestionSubstring]: answer } written per job during prep (essays, why-us). */
