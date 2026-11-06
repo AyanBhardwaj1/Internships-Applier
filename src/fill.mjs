@@ -97,7 +97,10 @@ function collectInPage() {
   }
   // selects
   for (const el of scope.querySelectorAll('select')) {
-    const label = labelFor(el); const wrap = el.closest(WRAP);
+    let label = labelFor(el); const wrap = el.closest(WRAP);
+    const optText = T(el); if (optText && label.includes(optText)) label = label.replace(optText, '').trim();
+    for (const o of el.options) { const ot = T(o); if (ot && ot.length > 2 && label.endsWith(ot)) label = label.slice(0, -ot.length).trim(); }
+    label = label.replace(/\s*select\s*\.{0,3}\s*$/i, '').trim();
     out.push({ ia: [tag(el)], type: 'select', label, name: el.name, required: reqOf(el, label, wrap), disabled: !!(el.disabled || el.getAttribute('aria-disabled') === 'true'),
       options: [...el.options].map(o => T(o) || o.value).filter(t => t && !/^(select|choose|please select|--)/i.test(t)),
       value: el.selectedIndex > 0 ? [T(el.options[el.selectedIndex])] : [], visible: visible(el) || visible(el.parentElement) });
@@ -162,6 +165,7 @@ async function act(page, f, ans, resumePath) {
       return path.basename(resumePath);
     }
     case 'text': case 'textarea': {
+      if (ans.clear) { if (f.value?.length) { await loc(page, f.ia[0]).fill(''); return '(cleared autofill)'; } return null; }
       if (ans.text == null || ans.text === '') return null;
       const el = loc(page, f.ia[0]);
       await el.fill(String(ans.text), { timeout: 5000 });
@@ -245,11 +249,11 @@ async function preparePage(page, ats) {
   }
 }
 
-function submitLocator(page) {
-  return page.locator([
-    'button[type=submit]:visible', 'input[type=submit]:visible', '#btn-submit:visible',
-    'button:visible:text-matches("^\\\\s*(submit( application)?|send application|apply|complete application)\\\\s*$", "i")',
-  ].join(', ')).last();
+async function findSubmit(page) {
+  const byRole = page.getByRole('button', { name: /^\s*(submit( application| your application)?|send application|apply( now)?|complete application)\s*$/i });
+  if (await byRole.count().catch(() => 0)) return byRole.last();
+  const css = page.locator('button[type=submit]:visible, input[type=submit]:visible, #btn-submit:visible, [class*="submit-button"]:visible');
+  return css.last();
 }
 
 /**
@@ -361,7 +365,7 @@ export async function runApplication(item, { mode = 'fill', profile, headless = 
     if (!resumeOk) { report.status = 'needs_input'; report.notes.push('Not submitted: resume not confirmed attached'); return report; }
     const cap = await captchaState(page);
     if (cap.challenge || cap.checkbox) { report.status = 'captcha'; report.notes.push('CAPTCHA visible before submit: stopped (never solved by the bot).'); await shot('captcha'); return report; }
-    const btn = submitLocator(page);
+    const btn = await findSubmit(page);
     if (!(await btn.count())) { report.status = 'no_submit_button'; return report; }
     const before = page.url();
     await btn.scrollIntoViewIfNeeded().catch(() => {});
