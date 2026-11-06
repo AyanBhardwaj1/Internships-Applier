@@ -56,7 +56,7 @@ export const RULES = [
   { when: /what type of position|position type|type of (role|job) (are you )?applying/, a: () => ({ text: 'Internship', choose: ['Internship', 'Intern', 'Summer Internship'] }) },
   { when: /(desired|expected) (salary|pay|compensation)|salary (requirement|expectation)|compensation expectation|pay expectation/, a: () => ({ text: 'Open to the posted range for this internship', choose: ['Open', 'Negotiable'] }) },
   { when: /(okay|ok|comfortable|happy) (spending|working|being|living)|(commit to|willing to) (living|live|relocat)|commutable distance/, a: () => ({ choose: ['Yes'] }) },
-  { when: /target internship dates|internship dates|which internship (term|session|dates)/, a: () => ({ choose: ['Internship - Summer', 'Summer 2027', 'Summer'] }) },
+  { not: /authori|eligib|sponsor/, when: /target internship dates|internship dates|which internship (term|session|dates)/, a: () => ({ choose: ['Internship - Summer', 'Summer 2027', 'Summer'] }) },
   { when: /california residents|ccpa|privacy notice for california/, a: () => ({ check: true, choose: ['I acknowledge', 'Acknowledge', 'Yes', 'I Acknowledge', 'I agree'] }) },
   { when: /state or (canadian )?province (do you )?resid|which (u\.?s\.? )?state (do )?you (reside|live)|state of residence/, a: () => ({ text: 'Texas', choose: ['Texas', 'TX'] }) },
   { when: /^if you (answered|selected|chose)\b|^if (other|no|yes)\b|please specify (details )?(from )?(your answer )?above|if you selected other/, a: (p, f) => f.required ? { text: 'N/A' } : { skip: true } },
@@ -75,6 +75,9 @@ export const RULES = [
   { when: /previous (work )?experience in software|prior (work )?experience in software|worked as a software/, a: () => ({ choose: ['Yes'] }) },
   { when: /dates? (are you |you are )?available.*(start|finish|end)|internship availability.*(start|end)|start (date )?and end date/, a: () => ({ text: 'May 17, 2027 to September 15, 2027' }) },
   { when: /still (a )?student|currently (a )?student\??$|currently attend(ing)?\??$|i am still (enrolled|attending)/, types: ['checkbox'], a: () => ({ check: true, choose: ['Yes', 'Still Student?', 'Still student'] }) },
+  { when: /physically based|office location indicated|which of the following (best )?describes your (location|relocation)|plan to relocate/, a: () => ({ choose: ['I do not currently live in the location mentioned, but would plan to relocate myself for this role.', 'I would plan to relocate', 'Willing to relocate', 'Yes'] }) },
+  { when: /(complete|completing|pursuing|enrolled in) (a |an )?(master'?s|phd|graduate) (or (phd|master'?s) )?(program|degree)|(master'?s|phd) (or (phd|master'?s) )?program in/, a: () => ({ choose: ['No'] }) },
+  { when: /(able|available|willing) to be in .* for the (full|entire) (duration|summer)/, a: () => ({ choose: ['Yes'] }) },
   // ---- identity / contact
   { when: /^(legal )?first name|^given name|^first$/, a: p => ({ text: p.name.first }) },
   { when: /^(legal |preferred )?last name|^surname|^family name|^last$/, a: p => ({ text: p.name.last }) },
@@ -104,7 +107,7 @@ export const RULES = [
   // ---- work authorization
   { when: /(authori[sz]ed|eligible|able) to work.*without.*sponsor/, a: () => ({ choose: ['Yes'], text: 'Yes' }) },
   { when: /sponsor/, a: () => ({ choose: ['No', 'No, I will not require sponsorship', 'I do not require sponsorship'], text: 'No' }) },
-  { when: /(legally )?(authori[sz]ed|eligible|permitted).*(work|employment)|right to work|work authori[sz]ation/, a: () => ({ choose: ['Yes', 'Yes, I am authorized', 'U.S. Citizen', 'US Citizen'], text: 'Yes' }) },
+  { when: /(legally )?(authori[sz]ed|eligible|permitted).*(work|employment)|right to work|work authori[sz]ation/, a: () => ({ choose: ['Yes', 'I am authorized to work in the United States for any employer', 'Yes, I am authorized', 'U.S. Citizen', 'US Citizen'], text: 'Yes' }) },
   { when: /visa status|immigration status|citizenship status|are you a (us|u\.s\.) citizen|citizen of the united states|u\.?s\.? person|export control|itar/, a: () => ({ choose: ['U.S. Citizen', 'US Citizen', 'Citizen', 'Yes', 'I am a U.S. Citizen'], text: 'U.S. Citizen' }) },
   { when: /(active|current).*(security )?clearance/, a: () => ({ choose: no }) },
   { when: /(eligible|able|willing).*(obtain|get).*clearance/, a: () => ({ choose: ['Yes'] }) },
@@ -143,7 +146,7 @@ export const RULES = [
   { when: /how (did )?you (first )?(hear|find|learn|connect|come across)|how you (heard|found|learned)|where did you (hear|find|learn|see)|^source$|referral source/, a: p => ({ choose: [p.defaults.howDidYouHear, 'LinkedIn', 'Job Board', 'Online Job Board', 'Internet', 'Other'], text: p.defaults.howDidYouHear }) },
   { when: /^current (company|employer)$|^current (company|employer)\b(?!.* or )/, a: (p, f) => f.required ? { text: `Student, ${p.education.school}` } : { clear: true } },
   { when: /current (title|job title|role)/, a: () => ({ skip: true }) },
-  { when: /years of (professional |relevant |work )?experience/, a: () => ({ text: '1', choose: ['0-1', 'Less than 1 year', '0 - 1 years', '1', '1-2', '1 year'] }) },
+  { when: /years of (professional |relevant |work |industry )?experience|years of industry/, a: () => ({ text: '1', choose: ['0-1', 'Less than 1 year', '0 - 1 years', '1', '1-2', '1 year'] }) },
   { when: /languages? (do you )?speak|fluent|proficien.*language/, a: p => ({ text: p.defaults.languages, choose: ['English'] }) },
 
   { when: /which (software |engineering )?(team|area|group|track|domain)(\(s\)|s)? .*(interest|prefer)|team preference|areas? of interest/, a: () => ({ choose: ['Open to any team/No strong preference', 'Open to any team', 'No preference', 'No strong preference', 'Any', 'Full Stack', 'Full-stack', 'Backend'] }) },

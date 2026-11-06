@@ -9,7 +9,7 @@ export const QUANT_FIRMS = [
   'old mission', 'tower research', 'tower research capital', 'virtu', 'virtu financial', 'ctc', 'chicago trading company',
   'man group', 'kershner', 'kershner trading group', 'hrt', 'millennium', 'point72', 'balyasny', 'radix', 'xtx', 'xtx markets',
   'flow traders', 'belvedere', 'vatic', 'vatic investments', 'schonfeld', 'garda capital partners', 'garda', 'jump',
-  'dv trading', 'arrowstreet', 'cubist', 'worldquant', 'pdt partners', 'graham capital', 'de shaw & co', 'sig susquehanna',
+  'dv trading', 'memx', 'members exchange', 'the voleon group', 'voleon group', 'arrowstreet', 'cubist', 'worldquant', 'pdt partners', 'graham capital', 'de shaw & co', 'sig susquehanna',
   'peak6', 'wolverine', 'geneva trading', 'headlands', 'aquatic', 'voleon', 'renaissance', 'g-research', 'squarepoint',
   'qube', 'maven securities', 'da vinci', 'hap capital', 'valkyrie', 'eclipse trading', 'tradebot', 'jpmorgan quant',
 ];
@@ -77,6 +77,8 @@ export function classify(job) {
   if (isQuant(job.company, title, job.category)) return { ok: false, lane: 'quant', reasons: ['Quant/HFT/prop firm: browse only'] };
   if (terms && !/summer 2027/i.test(terms) && !/summer 2027|2027 summer/i.test(title)) reasons.push(`Term is ${terms}, not Summer 2027`);
   if (!terms && !/2027/.test(title)) reasons.push('Term not stated (confirm Summer 2027)');
+  if (/\b(fall|spring|winter|autumn)\b/i.test(title) && !/\bsummer\b/i.test(title)) reasons.push('Title names a non-summer term');
+  if (/\b(2026|2025)\b/.test(title) && !/2027/.test(title)) reasons.push('Title names a past year');
   if (!loc.us) reasons.push('No US location');
   if (BAD_TITLE.test(title)) reasons.push('Title targets grad/senior/full-time');
   if (HARDWARE_ONLY.test(title) && !/software|firmware|embedded|data|ml|ai\b/i.test(title)) reasons.push('Hardware/non-software role');

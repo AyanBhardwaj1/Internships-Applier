@@ -43,7 +43,7 @@ export async function fromSimplify({ maxAgeDays = 120 } = {}) {
 export async function fromBoards() {
   const cfg = readJSON(path.join(ROOT, 'config', 'boards.json'), { greenhouse: [], lever: [], ashby: [] });
   const out = [];
-  const intern = /intern|co-?op/i;
+  const intern = /\bintern(ship)?s?\b|\bco-?op\b/i;
   const tasks = [];
   for (const b of cfg.greenhouse) tasks.push(fetchJSON(`https://boards-api.greenhouse.io/v1/boards/${b}/jobs?content=false`).then(d =>
     (d.jobs || []).filter(j => intern.test(j.title)).forEach(j => out.push({ source: 'greenhouse', company: b, title: j.title,
