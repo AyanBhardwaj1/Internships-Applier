@@ -128,5 +128,36 @@
       "uploadName": "Alex_Example -- Resume.pdf",
       "use": "product management / APM / TPM"
     }
-  }
+  },
+  "skills": [
+    "Python",
+    "C++",
+    "Java",
+    "TypeScript",
+    "JavaScript",
+    "Rust",
+    "SQL",
+    "MATLAB",
+    "HTML/CSS",
+    "PyTorch",
+    "PyTorch Geometric",
+    "NumPy",
+    "Scikit-learn",
+    "scikit-learn",
+    "OpenCV",
+    "React",
+    "Next.js",
+    "FastAPI",
+    "PostgreSQL",
+    "Supabase",
+    "Git",
+    "GitHub",
+    "REST APIs",
+    "BeautifulSoup",
+    "Scrapy",
+    "Selenium",
+    "Modal",
+    "Vercel",
+    "Tauri"
+  ]
 }

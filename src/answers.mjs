@@ -22,6 +22,23 @@ export const RULES = [
   { when: /cover letter|transcript|writing sample|portfolio file|work sample/, types: ['file'], a: (_, f) => f.required ? { ask: 'Required file upload (cover letter / transcript / sample)' } : { skip: true } },
   { when: /.*/, types: ['file'], a: (_, f) => f.required ? { ask: 'Required file upload' } : { skip: true } },
 
+  // ---- specific questions that broader rules below would otherwise catch
+  { when: /^if (yes|so|applicable)\b|^if you (answered|selected) yes/, a: (p, f) => f.required ? { ask: 'Follow-up to a yes/no question' } : { skip: true } },
+  { when: /currently enrolled|enrolled (in|as) (a|an)? ?(full[- ]time )?(student|undergraduate|degree)|are you (a )?current(ly)? (a )?student/, a: () => ({ choose: ['Yes'] }) },
+  { when: /returning to school|return to (school|your studies)|continuing (your )?(education|studies) after/, a: () => ({ choose: ['Yes'] }) },
+  { when: /highest (level of )?education (you have )?completed|highest degree (completed|earned|obtained)/, a: () => ({ choose: ['High school or equivalency diploma', 'High School Diploma', 'High school', 'High School or equivalent'] }) },
+  { when: /comfortable (using|with) git|version control|use git\b/, a: () => ({ choose: ['Yes'] }) },
+  { when: /(salary|pay|compensation)( or hourly pay)? range (align|meet|match)|align with your (salary|pay|compensation) expectations/, a: () => ({ choose: ['Yes'] }) },
+  { when: /reside in the (us|u\.s\.|united states)|live in the (us|united states) (during|for)|located in the (us|united states) (during|for)/, a: () => ({ choose: ['Yes'] }) },
+  { when: /available to work full[- ]time|work full[- ]time .*(between|from|during)|40 hours per week/, a: () => ({ choose: ['Yes'] }) },
+  { when: /remote internship (structure )?align|primarily remote/, a: () => ({ choose: ['Yes, a remote internship aligns with my expectations and preferences', 'Yes'] }) },
+  { when: /staffing agency|independent contractor|contingent worker|engaged to perform services/, a: () => ({ choose: ['No'] }) },
+  { when: /school district|local educational agency|state (education )?agency|curriculum purchasing/, a: () => ({ choose: ['No'] }) },
+  { when: /(programming )?languages?.*(framework|tool|librar)|which (languages|frameworks|technologies|tools) do you (use|know)|tech(nical)? stack you/, types: ['checkbox'],
+    a: p => ({ chooseAll: p.skills || [] }) },
+  { when: /^candidate'?s? company$|^company$/, a: (p, f) => f.required ? { text: `Student, ${p.education.school}` } : { skip: true } },
+  { when: /^degree$/, types: ['text'], a: () => ({ text: 'Bachelor of Science' }) },
+
   // ---- identity / contact
   { when: /^(legal )?first name|^given name|^first$/, a: p => ({ text: p.name.first }) },
   { when: /^(legal )?last name|^surname|^family name|^last$/, a: p => ({ text: p.name.last }) },
@@ -41,7 +58,7 @@ export const RULES = [
   // ---- location / address
   { when: /street|address line|^address$|mailing address|permanent address/, a: p => ({ text: `${p.permanentAddress.line1}, ${p.permanentAddress.city}, ${p.permanentAddress.state} ${p.permanentAddress.zip}` }) },
   { when: /zip|postal/, a: p => ({ text: p.permanentAddress.zip }) },
-  { when: /^state$|state of residence|^state\/province|^province/, a: () => ({ choose: ['Texas', 'TX'] }) },
+  { when: /^state$|state of residence|^state\/province|^province/, not: /city/, a: () => ({ choose: ['Texas', 'TX'] }) },
   { when: /^city$/, a: p => ({ text: p.location.city }) },
   { when: /^country$|country of residence|which country.*(live|reside)|^country\b/, a: () => ({ choose: ['United States', 'United States of America', 'USA', 'US'] }) },
   { when: /willing to relocate|open to relocat|relocation/, a: () => ({ choose: ['Yes', 'Yes, I am willing to relocate'] }) },
@@ -85,7 +102,7 @@ export const RULES = [
       return { ask: 'Prior-experience question that may not be about this employer' };
     } },
   { when: /(previously|ever|before).*appl/, a: () => ({ ask: 'Asks about previous applications to this company: check the tracker' }) },
-  { when: /relative|family member|personal relationship|related to (anyone|an employee)/, a: () => ({ choose: no }) },
+  { when: /relative|family member|personal relationship|related to (any|anyone|an employee)|related to .*employee/, a: () => ({ choose: no }) },
   { when: /non-?compete|non-?solicit|nda|restrictive covenant/, a: () => ({ choose: no }) },
   { when: /referr(ed|al)|employee referral|know anyone/, a: () => ({ choose: ['No'], text: '' }) },
   { when: /how did you (hear|find|learn)|where did you (hear|find|learn|see)|^source$|referral source/, a: p => ({ choose: [p.defaults.howDidYouHear, 'LinkedIn', 'Job Board', 'Online Job Board', 'Internet', 'Other'], text: p.defaults.howDidYouHear }) },
@@ -94,6 +111,7 @@ export const RULES = [
   { when: /years of (professional |relevant |work )?experience/, a: () => ({ text: '1', choose: ['0-1', 'Less than 1 year', '0 - 1 years', '1', '1-2', '1 year'] }) },
   { when: /languages? (do you )?speak|fluent|proficien.*language/, a: p => ({ text: p.defaults.languages, choose: ['English'] }) },
 
+  { when: /which (software |engineering )?(team|area|group|track|domain)(\(s\)|s)? .*(interest|prefer)|team preference|areas? of interest/, a: () => ({ choose: ['Open to any team/No strong preference', 'Open to any team', 'No preference', 'No strong preference', 'Any', 'Full Stack', 'Full-stack', 'Backend'] }) },
   // ---- consent
   { when: /text message|sms|whatsapp|marketing|newsletter|job alerts|future (opportunit|openings)|talent (community|network)/, a: () => ({ check: false, choose: ['No', 'No, I do not consent', 'Decline'] }) },
   { when: /i (agree|acknowledge|consent|certify|confirm|understand|have read)|privacy (policy|notice)|terms|consent|acknowledg|certif|attest|accurate|true and complete/, a: () => ({ check: true, choose: ['I Acknowledge', 'I agree', 'I Agree', 'Yes', 'Acknowledge', 'I acknowledge', 'Confirm'] }) },
@@ -121,6 +139,15 @@ export function answerFor(profile, field, job = {}, overrides = {}) {
   for (const [k, v] of Object.entries(overrides || {})) {
     if (k && q.includes(norm(k))) return typeof v === 'string' ? { text: v, choose: [v], override: true } : { ...v, override: true };
   }
+  const opts = (field.options || []).join(' | ');
+  // SMS-consent radios often carry the phone field's label.
+  if (/text messag|\bsms\b/i.test(opts) && ['radio', 'select', 'checkbox'].includes(field.type)) return { check: false, choose: ['No - I do not consent to receiving text messages', 'No', 'No, I do not consent', 'Decline'] };
+  // Ashby education-entry dates: "Month..."/"Year..." pickers under Start Date / End Date.
+  if (/^(start|end) date/.test(q) && /^(month|year)\.\.\./i.test(field.options?.[0] || '')) {
+    const start = /^start/.test(q), isMonth = /^month/i.test(field.options[0]);
+    const e = profile.education;
+    return { choose: [isMonth ? (start ? 'August' : 'May') : String(start ? e.start.year : e.graduation.year)] };
+  }
   for (const r of RULES) {
     if (r.types && !r.types.includes(field.type)) continue;
     if (!r.types && field.type === 'file') continue;
@@ -145,6 +172,8 @@ export function pickOption(options, prefs) {
     let m = O.find(x => x.n === np);
     if (m) return m.o;
     m = O.find(x => new RegExp(`^${esc(np)}\\b`).test(x.n));
+    if (m) return m.o;
+    m = O.find(x => new RegExp(`(^|[\\s/(,-])${esc(np)}($|[\\s/),-])`).test(x.n));
     if (m) return m.o;
     if (np.length > 3) {
       m = O.find(x => x.n.includes(np));

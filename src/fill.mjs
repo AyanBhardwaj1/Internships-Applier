@@ -48,37 +48,50 @@ function collectInPage() {
     return el.getAttribute('placeholder') || el.name || '';
   };
   const reqOf = (el, label, wrap) => !!(el.required || el.getAttribute('aria-required') === 'true' || /\*|✱|\(required\)/.test(label) || (wrap && wrap.querySelector('.required, [class*="required"], abbr[title=required]')));
+  document.querySelectorAll('[data-ia], [data-ia-opt]').forEach(e => { e.removeAttribute('data-ia'); e.removeAttribute('data-ia-opt'); });
   const out = []; let n = 0;
   const tag = el => { const id = String(n++); el.setAttribute('data-ia', id); return id; };
   const form = document.querySelector('form#application-form, form#application_form, #application-form, form[action*="apply"], form.application-form, form') || document.body;
   const scope = form === document.body ? document : form;
 
-  // radios / checkboxes grouped by name
-  const groups = new Map();
-  for (const el of scope.querySelectorAll('input[type=radio], input[type=checkbox]')) {
-    const key = el.name || el.id || ('g' + n);
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(el);
-  }
-  for (const [name, els] of groups) {
-    const wrap = els[0].closest(WRAP) || els[0].parentElement?.parentElement;
-    const optLabel = el => { const l = (el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`)) || el.closest('label'); return T(l) || el.value || el.getAttribute('aria-label') || ''; };
-    const type = els[0].type === 'radio' ? 'radio' : 'checkbox';
-    const single = type === 'checkbox' && els.length === 1;
-    let label = single ? (qText(wrap, els) || optLabel(els[0])) : (qText(wrap, els) || name);
-    if (single && optLabel(els[0]).length > label.length) label = optLabel(els[0]);
-    out.push({ ia: els.map(tag), type, single, name, label, required: reqOf(els[0], label, wrap), options: els.map(optLabel),
-      value: els.filter(e => e.checked).map(optLabel), visible: els.some(e => visible(e) || visible(e.closest('label'))) });
-  }
-  // Ashby-style Yes/No button pairs
+  // Ashby-style Yes/No button pairs (detected first so their hidden checkbox isn't double-counted)
+  const yesnoWraps = new Set();
   for (const wrap of scope.querySelectorAll('[class*="field-entry"], [class*="yesno"], [class*="YesNo"]')) {
     const btns = [...wrap.querySelectorAll('button')].filter(b => /^(yes|no)$/i.test(T(b)) && !b.hasAttribute('data-ia'));
     if (btns.length === 2 && !wrap.querySelector('input[type=radio]')) {
       const label = qText(wrap, btns);
+      const entry = wrap.closest('[class*="field-entry"]') || wrap;
+      yesnoWraps.add(entry);
       if (out.some(o => o.type === 'yesno' && o.label === label)) continue;
-      out.push({ ia: btns.map(tag), type: 'yesno', label, required: /\*/.test(label), options: btns.map(T),
+      const hidden = entry.querySelector('input[type=checkbox]');
+      out.push({ ia: btns.map(tag), type: 'yesno', label, required: reqOf(hidden || btns[0], label, entry), options: btns.map(T),
         value: btns.filter(b => /selected|active|checked/i.test(b.className) || b.getAttribute('aria-pressed') === 'true').map(T), visible: btns.some(visible) });
     }
+  }
+  // radios / checkboxes: grouped by shared name, else by their question container (Ashby gives each box its own name)
+  const all = [...scope.querySelectorAll('input[type=radio], input[type=checkbox]')];
+  const nameCount = {}; for (const el of all) if (el.name) nameCount[el.name] = (nameCount[el.name] || 0) + 1;
+  const GROUPWRAP = 'fieldset, [role=radiogroup], [role=group], [class*="field-entry"], li.application-question, .application-question';
+  const groups = new Map();
+  for (const el of all) {
+    const entry = el.closest('[class*="field-entry"]');
+    if (entry && yesnoWraps.has(entry) && !visible(el)) continue;
+    const box = el.closest(GROUPWRAP);
+    const key = el.name && nameCount[el.name] > 1 ? 'n:' + el.name : (box || el.name || el.id || el);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(el);
+  }
+  for (const [key, els] of groups) {
+    const name = els[0].name || '';
+    const wrap = els[0].closest(WRAP) || els[0].parentElement?.parentElement;
+    const optLabel = el => { const l = (el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`)) || el.closest('label'); return T(l) || el.value || el.getAttribute('aria-label') || ''; };
+    const type = els[0].type === 'radio' ? 'radio' : 'checkbox';
+    const single = type === 'checkbox' && els.length === 1;
+    const qwrap = els.length > 1 ? (els[0].closest(GROUPWRAP) || wrap) : wrap;
+    let label = single ? (qText(wrap, els) || optLabel(els[0])) : (qText(qwrap, els) || name);
+    if (single && optLabel(els[0]).length > label.length) label = optLabel(els[0]);
+    out.push({ ia: els.map(tag), type, single, name, label, required: reqOf(els[0], label, qwrap), options: els.map(optLabel),
+      value: els.filter(e => e.checked).map(optLabel), visible: els.some(e => visible(e) || visible(e.closest('label'))) });
   }
   // selects
   for (const el of scope.querySelectorAll('select')) {
@@ -105,10 +118,12 @@ function collectInPage() {
 
 // ------------------------------------------------------------------ actions
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const withTimeout = (p, ms, what) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`timed out after ${ms / 1000}s: ${what}`)), ms))]);
+const dbg = (...a) => { if (process.env.IA_DEBUG) console.error('[fill]', ...a); };
 const loc = (page, ia) => page.locator(`[data-ia="${ia}"]`);
 
 async function readOptionsOpen(page) {
-  return page.evaluate(() => [...document.querySelectorAll('[role=option], [class*="select__option"], .dropdown-results li, [class*="option"][id*="option"]')]
+  return page.evaluate(() => [...document.querySelectorAll('[role=option], [class*="select__option"], .dropdown-results li, [class*="option"][id*="option"]')].concat(document.querySelector('[role=option]') ? [] : [...document.querySelectorAll('[role=listbox] > *')])
     .filter(o => { const r = o.getBoundingClientRect(); return r.width > 0 && r.height > 0; })
     .map((o, i) => { o.setAttribute('data-ia-opt', String(i)); return (o.innerText || o.textContent || '').replace(/\s+/g, ' ').trim(); }));
 }
@@ -116,11 +131,12 @@ async function readOptionsOpen(page) {
 async function chooseCombobox(page, f, prefs, typeText) {
   const el = loc(page, f.ia[0]);
   const tries = [typeText, ...prefs].filter(Boolean).slice(0, 4);
-  for (const t of [null, ...tries]) {
+  for (const t of (typeText ? tries : [null, ...tries])) {
     await el.click({ timeout: 4000 }).catch(() => {});
-    if (t) { await el.fill('').catch(() => {}); await el.pressSequentially(String(t).slice(0, 18), { delay: 25 }).catch(() => {}); await sleep(900); }
-    else await sleep(300);
+    if (t) { await el.fill('').catch(() => {}); await el.pressSequentially(String(t).slice(0, 30), { delay: 30 }).catch(() => {}); await sleep(1800); }
+    else await sleep(400);
     const opts = await readOptionsOpen(page);
+    dbg('combobox', f.label.slice(0, 40), 'typed', t, 'opts', opts.slice(0, 5));
     const pick = pickOption(opts, prefs) ?? (t && opts.length && /austin|university of texas/i.test(t) ? opts.find(o => /austin/i.test(o)) : null);
     if (pick != null) {
       const i = opts.indexOf(pick);
@@ -157,7 +173,7 @@ async function act(page, f, ans, resumePath) {
     }
     case 'combobox': {
       if (!prefs.length) return null;
-      return chooseCombobox(page, f, prefs, ans.autocomplete ? ans.text : null);
+      return chooseCombobox(page, f, prefs, ans.autocomplete ? (ans.typeText || ans.text) : null);
     }
     case 'select': {
       const pick = pickOption(f.options, prefs);
@@ -176,6 +192,11 @@ async function act(page, f, ans, resumePath) {
       if (f.single) {
         if (ans.check === true) { await loc(page, f.ia[0]).check({ force: true }).catch(() => loc(page, f.ia[0]).click({ force: true })); return 'checked'; }
         return null;
+      }
+      if (ans.chooseAll) { // "select all that apply" skill lists: every option that is a real fact
+        const picks = f.options.filter(o => ans.chooseAll.some(c => norm(o) === norm(c)));
+        for (const o of picks) await loc(page, f.ia[f.options.indexOf(o)]).check({ force: true }).catch(() => loc(page, f.ia[f.options.indexOf(o)]).click({ force: true }));
+        return picks.length ? picks.join(', ') : null;
       }
       const pick = pickOption(f.options, prefs); // multi-select (e.g. race "select all that apply"): one option only
       if (pick == null) return null;
@@ -266,10 +287,28 @@ export async function runApplication(item, { mode = 'fill', profile, headless = 
     if (!fields.some(f => f.type === 'file') && !fields.some(f => /e-?mail/i.test(f.label))) {
       report.status = 'no_form'; report.notes.push('No application form found on the page'); await shot('no-form'); return report;
     }
+    // Attach the resume first: on many Ashby/Greenhouse boards it triggers "autofill from resume", which re-renders
+    // the form. Then wait for that to settle and re-read the fields before filling anything else.
+    let resumeDone = false;
+    if (mode !== 'inspect') {
+      const rf = fields.find(f => f.type === 'file' && /\b(resume|cv)\b/i.test(f.label));
+      if (rf) {
+        try {
+          await loc(page, rf.ia[0]).setInputFiles(resumePath);
+          report.filled.push({ q: rf.label, a: path.basename(resumePath) }); resumeDone = true;
+          await sleep(2500);
+          await page.getByText(/autofill completed|we filled in|parsing complete/i).first().waitFor({ timeout: 12000 }).catch(() => {});
+          await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+          await sleep(1000);
+          fields = await page.evaluate(collectInPage);
+        } catch (e) { report.notes.push(`Resume upload first-pass failed: ${e.message.split('\n')[0]}`); }
+      }
+    }
     report.questions = fields.map(f => ({ label: f.label, type: f.type, required: f.required, options: f.options.slice(0, 25) }));
 
     for (const f of fields) {
       if (!f.visible && f.type !== 'file') continue;
+      if (resumeDone && f.type === 'file' && /\b(resume|cv)\b/i.test(f.label)) continue;
       const ans = answerFor(profile, f, item, item.overrides);
       if (ans.skip) { report.skipped.push(f.label); continue; }
       if (ans.ask && !ans.choose && !ans.text && !ans.check) { report.asks.push({ q: f.label, why: ans.ask, required: f.required, options: f.options.slice(0, 15) }); continue; }
@@ -284,7 +323,8 @@ export async function runApplication(item, { mode = 'fill', profile, headless = 
         if (want && norm(f.value[0]) === want) { report.filled.push({ q: f.label, a: f.value[0], kept: true }); continue; }
       }
       try {
-        const done = await act(page, f, ans, resumePath);
+        dbg('field', f.type, f.label.slice(0, 60));
+        const done = await withTimeout(act(page, f, ans, resumePath), 25000, f.label.slice(0, 40));
         if (done != null) report.filled.push({ q: f.label, a: done });
         else if (f.required) report.asks.push({ q: f.label, why: ans.ask || 'Could not match any option', required: true, options: f.options.slice(0, 15) });
         if (ans.ask && done != null) report.notes.push(`Check "${f.label}": ${ans.ask} (entered ${done})`);

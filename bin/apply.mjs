@@ -36,13 +36,15 @@ function trackerUpsert(row) {
 
 const COMMANDS = {
   async doctor() {
-    const hosts = ['https://raw.githubusercontent.com', 'https://job-boards.greenhouse.io', 'https://boards-api.greenhouse.io', 'https://jobs.lever.co', 'https://api.lever.co', 'https://jobs.ashbyhq.com', 'https://api.ashbyhq.com', 'https://jobs.smartrecruiters.com'];
+    // Probe real paths with redirects off: site roots redirect to marketing domains we don't need.
+    const hosts = ['https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/README.md', 'https://job-boards.greenhouse.io/figma', 'https://boards-api.greenhouse.io/v1/boards/figma/jobs',
+      'https://jobs.lever.co/zoox', 'https://api.lever.co/v0/postings/zoox?mode=json&limit=1', 'https://jobs.ashbyhq.com/saronic', 'https://api.ashbyhq.com/posting-api/job-board/saronic', 'https://jobs.smartrecruiters.com/ServiceNow'];
     const rows = [];
     for (const h of hosts) {
       let s;
-      try { const r = await fetch(h, { method: 'HEAD', signal: AbortSignal.timeout(10000) }); s = `ok (${r.status})`; }
+      try { const r = await fetch(h, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(15000) }); s = `ok (${r.status})`; }
       catch (e) { s = `BLOCKED (${(e.cause?.message || e.message).slice(0, 60)})`; }
-      rows.push({ host: h.replace('https://', ''), status: s });
+      rows.push({ host: new URL(h).hostname, status: s });
     }
     console.log(fmtTable(rows, ['host', 'status']));
     const priv = ['profile.json', 'tracker.json', 'resumes/swe.pdf', 'resumes/ml.pdf', 'resumes/pm.pdf'].map(f => ({ file: 'private/' + f, present: fs.existsSync(path.join(ROOT, 'private', f)) ? 'yes' : 'MISSING' }));
