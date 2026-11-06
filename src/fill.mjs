@@ -98,7 +98,7 @@ function collectInPage() {
   // selects
   for (const el of scope.querySelectorAll('select')) {
     const label = labelFor(el); const wrap = el.closest(WRAP);
-    out.push({ ia: [tag(el)], type: 'select', label, name: el.name, required: reqOf(el, label, wrap),
+    out.push({ ia: [tag(el)], type: 'select', label, name: el.name, required: reqOf(el, label, wrap), disabled: !!(el.disabled || el.getAttribute('aria-disabled') === 'true'),
       options: [...el.options].map(o => T(o) || o.value).filter(t => t && !/^(select|choose|please select|--)/i.test(t)),
       value: el.selectedIndex > 0 ? [T(el.options[el.selectedIndex])] : [], visible: visible(el) || visible(el.parentElement) });
   }
@@ -114,7 +114,7 @@ function collectInPage() {
     let value = el.value ? [el.value] : [];
     if (combo) { const sv = (el.closest('[class*="select__control"]') || el.closest('.select-shell, .select__container, [class*="select-shell"]'))?.querySelector('[class*="single-value"], [class*="singleValue"], [class*="multi-value__label"]'); if (sv) value = [T(sv)]; }
     if (type === 'file') { const w = wrap || el.parentElement; const fn = w && T(w).match(/[\w\- .()]+\.(pdf|docx?|txt)/i); if (el.files?.length) value = [el.files[0].name]; else if (fn) value = [fn[0]]; }
-    out.push({ ia: [tag(el)], type, inputType: t, label, name: el.name, required: reqOf(el, label, wrap), options: [], value, visible: visible(el) || type === 'file' });
+    out.push({ ia: [tag(el)], type, inputType: t, label, name: el.name, required: reqOf(el, label, wrap), disabled: !!(el.disabled || el.getAttribute('aria-disabled') === 'true' || el.closest('[aria-disabled="true"], [class*="disabled"]')), options: [], value, visible: visible(el) || type === 'file' });
   }
   return out;
 }
@@ -344,7 +344,10 @@ export async function runApplication(item, { mode = 'fill', profile, headless = 
     // Read back, find blank required fields.
     await sleep(600);
     fields = await page.evaluate(collectInPage);
-    report.blankRequired = fields.filter(f => f.required && (f.visible || f.type === 'file') && !(f.value || []).length).map(f => f.label);
+    report.blankRequired = fields.filter(f => f.required && !f.disabled && (f.visible || f.type === 'file') && !(f.value || []).length).map(f => f.label);
+    // Close any open popover (date pickers etc.) so screenshots and the Submit button are unobstructed.
+    await page.keyboard.press('Escape').catch(() => {});
+    await page.locator('h1, h2').first().click({ timeout: 2000 }).catch(() => {});
     const resumeOk = fields.some(f => f.type === 'file' && /resume|cv/i.test(f.label) && f.value?.length) || report.filled.some(x => /\.pdf$/.test(x.a || ''));
     report.resumeAttached = resumeOk;
     await shot('filled');
