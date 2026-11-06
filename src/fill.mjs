@@ -38,7 +38,9 @@ function collectInPage() {
     return '';
   };
   const labelFor = el => {
-    if (el.id) { const l = document.querySelector(`label[for="${CSS.escape(el.id)}"]`); if (l && T(l)) return T(l); }
+    const grp = el.closest('[role=group][aria-labelledby]');
+    if (grp) { const t = grp.getAttribute('aria-labelledby').split(/\s+/).map(i => T(document.getElementById(i))).filter(Boolean).join(' '); if (t) return t; }
+    if (el.id) { const l = document.querySelector(`label[for="${CSS.escape(el.id)}"]`); if (l && T(l) && !/^(attach|upload|browse|choose file|enter manually|select file)$/i.test(T(l))) return T(l); }
     const lb = el.getAttribute('aria-labelledby');
     if (lb) { const t = lb.split(/\s+/).map(i => T(document.getElementById(i))).filter(Boolean).join(' '); if (t) return t; }
     const al = el.getAttribute('aria-label'); if (al && !/^(select\.{0,3}|search|choose|toggle)/i.test(al)) return al;
@@ -105,11 +107,12 @@ function collectInPage() {
     const t = (el.getAttribute('type') || (el.tagName === 'TEXTAREA' ? 'textarea' : 'text')).toLowerCase();
     if (['hidden', 'submit', 'button', 'radio', 'checkbox', 'image', 'reset', 'search'].includes(t)) continue;
     if (el.closest('[class*="g-recaptcha"], [class*="h-captcha"]')) continue;
+    if (t !== 'file' && (el.getAttribute('aria-hidden') === 'true' || (el.tabIndex === -1 && el.closest('.select-shell, [class*="container"]') && !el.getAttribute('role')))) continue; // react-select's hidden required twin
     const label = labelFor(el); const wrap = el.closest(WRAP);
     const combo = el.getAttribute('role') === 'combobox' || el.getAttribute('aria-autocomplete') === 'list' || !!el.closest('[class*="select__control"], [class*="Select-control"]');
     const type = t === 'file' ? 'file' : combo ? 'combobox' : (el.tagName === 'TEXTAREA' ? 'textarea' : 'text');
     let value = el.value ? [el.value] : [];
-    if (combo) { const sv = el.closest('[class*="select__control"], [class*="container"]')?.querySelector('[class*="single-value"], [class*="singleValue"], [class*="multi-value__label"]'); if (sv) value = [T(sv)]; }
+    if (combo) { const sv = (el.closest('[class*="select__control"]') || el.closest('.select-shell, .select__container, [class*="select-shell"]'))?.querySelector('[class*="single-value"], [class*="singleValue"], [class*="multi-value__label"]'); if (sv) value = [T(sv)]; }
     if (type === 'file') { const w = wrap || el.parentElement; const fn = w && T(w).match(/[\w\- .()]+\.(pdf|docx?|txt)/i); if (el.files?.length) value = [el.files[0].name]; else if (fn) value = [fn[0]]; }
     out.push({ ia: [tag(el)], type, inputType: t, label, name: el.name, required: reqOf(el, label, wrap), options: [], value, visible: visible(el) || type === 'file' });
   }
@@ -136,7 +139,7 @@ async function chooseCombobox(page, f, prefs, typeText) {
     if (t) { await el.fill('').catch(() => {}); await el.pressSequentially(String(t).slice(0, 30), { delay: 30 }).catch(() => {}); await sleep(1800); }
     else await sleep(400);
     const opts = await readOptionsOpen(page);
-    dbg('combobox', f.label.slice(0, 40), 'typed', t, 'opts', opts.slice(0, 5));
+    dbg('combobox', f.label.slice(0, 40), 'typed', t, 'opts', JSON.stringify(opts.slice(0, 8)));
     const pick = pickOption(opts, prefs) ?? (t && opts.length && /austin|university of texas/i.test(t) ? opts.find(o => /austin/i.test(o)) : null);
     if (pick != null) {
       const i = opts.indexOf(pick);
@@ -194,7 +197,8 @@ async function act(page, f, ans, resumePath) {
         return null;
       }
       if (ans.chooseAll) { // "select all that apply" skill lists: every option that is a real fact
-        const picks = f.options.filter(o => ans.chooseAll.some(c => norm(o) === norm(c)));
+        const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const picks = f.options.filter(o => ans.chooseAll.some(c => new RegExp(`(^|[^a-z0-9+#])${esc(norm(c))}($|[^a-z0-9+#])`).test(norm(o))));
         for (const o of picks) await loc(page, f.ia[f.options.indexOf(o)]).check({ force: true }).catch(() => loc(page, f.ia[f.options.indexOf(o)]).click({ force: true }));
         return picks.length ? picks.join(', ') : null;
       }

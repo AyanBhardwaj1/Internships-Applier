@@ -10,7 +10,7 @@ let n = 0; const t = (name, fn) => { fn(); n++; };
 
 t('ATS detection + canonical apply URLs', () => {
   assert.equal(detectATS('https://job-boards.greenhouse.io/figma/jobs/123').ats, 'greenhouse');
-  assert.equal(applyUrl('https://boards.greenhouse.io/figma/jobs/123?gh_jid=123'), 'https://job-boards.greenhouse.io/figma/jobs/123');
+  assert.equal(applyUrl('https://boards.greenhouse.io/figma/jobs/123?gh_jid=123'), 'https://job-boards.greenhouse.io/embed/job_app?for=figma&token=123');
   assert.equal(applyUrl('https://jobs.lever.co/acme/abc-def'), 'https://jobs.lever.co/acme/abc-def/apply');
   assert.equal(applyUrl('https://jobs.ashbyhq.com/acme/uuid-1'), 'https://jobs.ashbyhq.com/acme/uuid-1/application');
   assert.equal(urlKey('https://jobs.ashbyhq.com/acme/UUID-1/application?embed=true'), 'ashby:uuid-1');

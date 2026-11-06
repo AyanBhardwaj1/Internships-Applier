@@ -42,7 +42,7 @@ export function detectATS(url) {
   const ghJid = u.searchParams.get('gh_jid');
   if (/(^|\.)greenhouse\.io$/.test(h)) {
     if (parts[0] === 'embed') {
-      return { ats: 'greenhouse', board: u.searchParams.get('for'), jobId: u.searchParams.get('token') };
+      return { ats: 'greenhouse', board: u.searchParams.get('for'), jobId: u.searchParams.get('token'), eu: h.includes('.eu.') };
     }
     const i = parts.indexOf('jobs');
     return { ats: 'greenhouse', board: parts[0], jobId: i >= 0 ? parts[i + 1] : ghJid, eu: h.includes('.eu.') };
@@ -62,7 +62,8 @@ export function detectATS(url) {
 /** Canonical form URL we drive with Playwright. */
 export function applyUrl(url) {
   const d = detectATS(url);
-  if (d.ats === 'greenhouse' && d.board && d.jobId) return `https://job-boards${d.eu ? '.eu' : ''}.greenhouse.io/${d.board}/jobs/${d.jobId}`;
+  // Embed form: same application, no redirect to the company's own careers site.
+  if (d.ats === 'greenhouse' && d.board && d.jobId) return `https://job-boards${d.eu ? '.eu' : ''}.greenhouse.io/embed/job_app?for=${d.board}&token=${d.jobId}`;
   if (d.ats === 'lever' && d.board && d.jobId) return `https://jobs${d.eu ? '.eu' : ''}.lever.co/${d.board}/${d.jobId}/apply`;
   if (d.ats === 'ashby' && d.board && d.jobId) return `https://jobs.ashbyhq.com/${d.board}/${d.jobId}/application`;
   return url;
