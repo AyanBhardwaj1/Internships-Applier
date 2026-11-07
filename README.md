@@ -11,6 +11,7 @@ scan (SimplifyJobs + ATS boards) → rules filter → queue → fill (Playwright
   grad year, never touch CAPTCHAs.
 - **Phone commands:** [docs/RUNBOOK.md](docs/RUNBOOK.md).
 - **Setup:** [docs/SETUP.md](docs/SETUP.md). The network allowlist is needed before the cloud can open forms.
+- **Outreach:** [docs/OUTREACH.md](docs/OUTREACH.md). Finds startups (robotics and humanoids first) and their founders, drafts short personal cold emails, and tracks follow-ups. Ayan approves and sends every email.
 - **History:** [docs/CONTEXT.md](docs/CONTEXT.md). What was ported from the Mac Career-Ops setup.
 
 ## Quick start (in a cloud session)

@@ -36,6 +36,7 @@ function trackerUpsert(row) {
 
 const COMMANDS = {
   auto: () => auto(),
+  outreach: () => outreach(),
   async doctor() {
     // Probe real paths with redirects off: site roots redirect to marketing domains we don't need.
     const hosts = ['https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/README.md', 'https://job-boards.greenhouse.io/figma', 'https://boards-api.greenhouse.io/v1/boards/figma/jobs',
@@ -193,6 +194,101 @@ async function auto() {
     results.push({ company: j.company, title: j.title, status: it.status });
   }
   console.log(`\nsubmitted ${submitted} · ` + Object.entries(results.reduce((a, x) => (a[x.status] = (a[x.status] || 0) + 1, a), {})).map(([k, v]) => `${k} ${v}`).join(' · '));
+}
+
+
+// ---------------------------------------------------------------- outreach (docs/OUTREACH.md)
+async function outreach() {
+  const o = await import('../src/outreach.mjs');
+  const sub = args.shift();
+  const leadsFile = o.O.leads;
+  const load = () => readJSON(leadsFile, { leads: {} });
+  const pickLeads = (L, refs) => refs.map(r => L.leads[r] || Object.values(L.leads).find(x => x.company.toLowerCase() === r.toLowerCase() || x.id.startsWith(r.toLowerCase()))).filter(Boolean);
+  const topIds = (L, n, filter = () => true) => Object.values(L.leads).filter(filter).sort((a, b) => b.score - a.score).slice(0, n).map(x => x.id);
+  switch (sub) {
+    case 'discover': {
+      const r = await o.discover({ top: Number(flag('top', 60)), focus: flag('focus') || null, refresh: !!flag('refresh') });
+      console.log(`scored ${r.scored} startups · ${r.added} new leads`);
+      console.log(fmtTable(r.shown.slice(0, Number(flag('show', 30))).map(({ c, score, reasons }) => ({ score, company: c.name.slice(0, 22), batch: c.batch, team: c.team_size, why: reasons.join(', ').slice(0, 70) })), ['score', 'company', 'batch', 'team', 'why']));
+      break;
+    }
+    case 'people': {
+      const L = load();
+      const t = flag('top'); const ids = t ? topIds(L, Number(t), x => !x.people?.length && !x.peopleError) : args;
+      for (const id of ids) {
+        const lead = await o.findPeople(id).catch(e => ({ company: id, peopleError: e.message }));
+        console.log(`${lead.company}: ${(lead.people || []).map(p => `${p.name} (${p.title})`).join('; ') || lead.peopleError}${lead.internJobs?.length ? ` · intern jobs: ${lead.internJobs.map(j => j.title).join('; ')}` : ''}`);
+        await new Promise(r => setTimeout(r, 1200)); // be gentle with ycombinator.com
+      }
+      break;
+    }
+    case 'draft': {
+      const L = load();
+      const t = flag('top'); const ids = t ? topIds(L, Number(t), x => x.people?.length && !x.draft) : args;
+      for (const id of ids) {
+        const lead = L.leads[id]; if (!lead) continue;
+        const person = (lead.teamSize > 8 && lead.people?.find(p => /\bcto\b/i.test(p.title || ''))) || lead.people?.find(p => /\bceo\b/i.test(p.title || '')) || lead.people?.[0];
+        lead.draft = o.draftEmail(lead, { person });
+        lead.to = person ? { name: person.name, title: person.title, email: person.emailGuesses?.[0] || null, alternates: person.emailGuesses?.slice(1) || [] } : null;
+        lead.status = lead.status === 'new' ? 'drafted' : lead.status;
+        console.log(`${lead.company} → ${lead.to?.name || '?'} <${lead.to?.email || 'no email'}> · ${lead.draft.words} words${lead.draft.needsPersonalising ? ' · NEEDS HOOK' : ''}`);
+      }
+      writeJSON(leadsFile, L);
+      break;
+    }
+    case 'set': { // outreach set <id> subject|body|to "<text>"
+      const L = load(); const [id, field, ...rest] = args; const lead = L.leads[id]; if (!lead) return console.error('no lead');
+      const v = rest.join(' ');
+      if (field === 'to') lead.to = { ...(lead.to || {}), email: v }; else { lead.draft = { ...(lead.draft || {}), [field]: v }; lead.draft.needsPersonalising = /\[[^\]]+\]/.test(lead.draft.body || ''); lead.draft.words = (lead.draft.body || '').split(/\s+/).length; }
+      writeJSON(leadsFile, L); console.log(`updated ${id}.${field}`); break;
+    }
+    case 'list': {
+      const L = load(); const st = flag('status');
+      const rows = Object.values(L.leads).filter(x => !st || x.status === st).sort((a, b) => b.score - a.score);
+      console.log(fmtTable(rows.slice(0, Number(flag('top', 50))).map(x => ({ id: x.id.slice(0, 22), status: x.status, score: x.score, company: x.company.slice(0, 20), batch: x.batch, contact: x.to?.name || (x.people?.[0]?.name || ''), why: (x.reasons || []).slice(0, 3).join(', ').slice(0, 50) })), ['id', 'status', 'score', 'company', 'batch', 'contact', 'why']));
+      break;
+    }
+    case 'show': {
+      const L = load(); for (const x of pickLeads(L, args)) {
+        console.log(`# ${x.company} (${x.batch}, ${x.teamSize} people) score ${x.score} · ${x.status}\n${x.oneLiner}\n${x.website} · ${x.ycUrl}`);
+        for (const p of x.people || []) console.log(`- ${p.name}, ${p.title} · ${p.linkedin || ''} · guesses: ${(p.emailGuesses || []).join(', ')}`);
+        if (x.internJobs?.length) console.log(`Intern jobs: ${x.internJobs.map(j => `${j.title} ${j.url || ''}`).join(' | ')}`);
+        if (x.draft) console.log(`\nTo: ${x.to?.name} <${x.to?.email}>\nSubject: ${x.draft.subject}\n\n${x.draft.body}\n\nCompose: ${o.gmailComposeUrl(x.to?.email, x.draft.subject, x.draft.body)}`);
+        for (const w of x.warmPaths || []) console.log(`warm path: ${w.kind}: ${w.how} ${w.url || ''}`);
+      }
+      break;
+    }
+    case 'approve': { const L = load(); for (const x of pickLeads(L, args)) { if (x.draft?.needsPersonalising) { console.error(`${x.company}: draft still has [placeholders]`); continue; } x.status = 'approved'; x.approvedAt = nowISO(); console.log(`approved ${x.company}`); } writeJSON(leadsFile, L); break; }
+    case 'sent': { // record a send Ayan made (or a Gmail draft he sent)
+      const L = load(); for (const x of pickLeads(L, args)) { x.status = 'sent'; x.sentAt = nowISO(); x.sentTo = x.to; x.followupsSent = 0; x.history.push({ at: nowISO(), event: 'sent' }); console.log(`sent: ${x.company}`); } writeJSON(leadsFile, L); break;
+    }
+    case 'replied': case 'meeting': case 'closed': {
+      const L = load(); for (const x of pickLeads(L, args)) { x.status = sub; x.history.push({ at: nowISO(), event: sub }); console.log(`${x.company}: ${sub}`); } writeJSON(leadsFile, L); break;
+    }
+    case 'followups': {
+      const L = load(); const due = o.dueFollowups(L);
+      if (!due.length) return console.log('no follow-ups due');
+      for (const { L: x, n, dueDate } of due) { const f = o.followupDraft(x, n); console.log(`\n## ${x.company} follow-up #${n} (due ${dueDate}) to ${x.sentTo?.email}\n${f.body}\nCompose: ${o.gmailComposeUrl(x.sentTo?.email, f.subject, f.body)}`); }
+      break;
+    }
+    case 'followup-sent': { const L = load(); for (const x of pickLeads(L, args)) { x.followupsSent = (x.followupsSent || 0) + 1; x.history.push({ at: nowISO(), event: `followup ${x.followupsSent}` }); console.log(`${x.company}: follow-up ${x.followupsSent} recorded`); } writeJSON(leadsFile, L); break; }
+    case 'meet': { // outreach meet <id> 2026-11-12T15:00:00-06:00 [minutes]
+      const L = load(); const [id, when, mins] = args; const x = L.leads[id]; if (!x) return console.error('no lead');
+      x.status = 'meeting'; x.meetingAt = when; writeJSON(leadsFile, L);
+      console.log(o.calendarUrl(`Call with ${x.to?.name || x.company} (${x.company})`, when, Number(mins || 30), `Outreach lead: ${x.ycUrl}`)); break;
+    }
+    default:
+      console.log(`outreach commands:
+  discover [--top N] [--focus robotics|hardtech|ai|devtools] [--refresh]   score YC startups for Ayan
+  people <id..> | --top N        founders + open jobs from YC pages, email guesses (MX-checked), warm paths
+  draft <id..> | --top N         first-pass email (needs a personal hook before approval)
+  set <id> subject|body|to "<text>"
+  list [--status S] | show <id..>
+  approve <id..>                 Ayan approved the final text
+  sent <id..> | replied | meeting | closed <id..>
+  followups                      due follow-ups (+4 and +11 days) with compose links
+  followup-sent <id..> | meet <id> <ISO time> [mins]  (calendar link)`);
+  }
 }
 
 async function run(mode) {

@@ -29,6 +29,11 @@ Ayan can tap Approve on Desk cards (https://claude.ai/artifact/KwnbmT3ePXuvwZUNv
 4. For each submitted card, update it to `stage: "applied"`, `appliedAt`, `submittedBy: "claude-cloud"`, pinned with `if_version`.
    Report anything that stopped (CAPTCHA, blank required field, grad gate) with its link.
 
+## Outreach (docs/OUTREACH.md)
+`./apply outreach discover | people | draft | show | approve | sent | followups | replied | meeting | closed | meet`.
+Before Ayan approves a draft, replace its `[hook]` with one specific line about the company and a concrete Summer 2027
+project, using only facts from `private/cv.txt`. Never send email yourself. A Gmail connector, if attached, may only create drafts.
+
 ## Commands
 `./apply doctor | scan | pick --top N | queue | show <slug> | inspect <slug> | fill <slug|--all> |
 answer <slug> "<question>" "<answer>" | approve <slug> | submit <slug..>|--approved | skip | status | track`

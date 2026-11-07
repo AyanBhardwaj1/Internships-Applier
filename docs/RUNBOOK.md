@@ -27,3 +27,15 @@ Text the cloud session from the Claude app. These are the messages it understand
   `show` output to copy.
 - **Ashby spam flag:** same. Submit from a fresh tab yourself.
 - **Grad-year gate** (only 2027 or 2028 offered): goes to your "you decide" list. Claude never picks a false year.
+
+## Outreach texts
+| You text | What happens |
+|---|---|
+| `outreach` / `who should I email?` | Top startup leads with drafted emails ready for review. |
+| `show innate` | The full email, the founder, alternate addresses, warm paths, and a Gmail compose link. |
+| `approve innate, yondu` | Marks them approved. Tap the compose link, attach your resume, and send. |
+| `sent innate` | Starts the follow-up clock (+4 and +11 days). |
+| `follow-ups` | Due follow-ups with compose links. |
+| `innate replied` / `call with innate Tue 3pm` | Updates status and gives you a Google Calendar link. |
+| `find more robotics startups` | Runs discover + people + draft again. |
+
