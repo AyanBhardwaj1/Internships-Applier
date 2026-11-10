@@ -52,3 +52,11 @@ These are Ayan's standing rules, carried over from the Career-Ops setup on his M
 - Before submitting, re-check that the resume is attached and no required field is blank.
 - **CAPTCHA or verification on screen: don't submit.** Tell him and give him the link instead.
 - After a submit is confirmed, mark the tracker row Applied (`./apply submit` does this automatically).
+- **At most 7 applications at a time (2026-11-10).** Work in batches of 7 or fewer: `./apply auto` submits at most 7
+  per run, and the Mac session opens at most 7 application tabs at once. Finish or close a batch before starting the next.
+
+## Relay to the Mac session (2026-11-10)
+Ayan: "any and all prompts I give you, relay the feature you build to the computer embedded chat... always, whenever
+you finish." After every feature or workflow change in this cloud session, send the Mac session ("Internships Applier
+Automated") his prompt word for word, what was built, the commands, and any new rules, so it can adopt them
+without being asked. Hand off applications the cloud can't submit (CAPTCHA, verification) to the Mac in the same message.

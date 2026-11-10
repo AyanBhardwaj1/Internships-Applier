@@ -57,4 +57,15 @@ t('pickOption prefers exact, then word-prefix', () => {
   assert.equal(pickOption(['2027', '2028'], ['2029', 'May 2029']), null);
 });
 
+t('answers: city, sponsorship lists with None, internship count, citizenship category', () => {
+  const ask = (label, options) => answerFor(profile, { label, type: options ? 'select' : 'text', options, required: true });
+  assert.equal(ask('What city do you live in?').text, 'Austin, TX');
+  const opts = ['OPT', 'H1B', 'TN', 'None', 'Other'];
+  assert.equal(pickOption(opts, ask('Will you now or at any time in the future require sponsorship for employment visa status (e.g. H1B, OPT)?', opts).choose), 'None');
+  assert.equal(pickOption(['J1', 'F1', 'None', 'Other'], ask('For this specific internship, will you require any of the below sponsorship for employment?', ['J1', 'F1', 'None', 'Other']).choose), 'None');
+  assert.equal(pickOption(['0', '1', '2', '3+'], ask('How many prior industry internships have you had?', ['0', '1', '2', '3+']).choose), '1');
+  const cit = ['A United States citizen or national', 'A person lawfully admitted for permanent residence of the United States'];
+  assert.equal(pickOption(cit, ask('A United States citizen or national', cit).choose), cit[0]);
+});
+
 console.log(`unit: ${n} groups passed`);

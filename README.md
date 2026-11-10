@@ -12,6 +12,7 @@ scan (SimplifyJobs + ATS boards) → rules filter → queue → fill (Playwright
 - **Phone commands:** [docs/RUNBOOK.md](docs/RUNBOOK.md).
 - **Setup:** [docs/SETUP.md](docs/SETUP.md). The network allowlist is needed before the cloud can open forms.
 - **Outreach:** [docs/OUTREACH.md](docs/OUTREACH.md). Finds startups (robotics and humanoids first) and their founders, drafts short personal cold emails, and tracks follow-ups. Ayan approves and sends every email.
+- **Daily brief:** [docs/BRIEF.md](docs/BRIEF.md). Text "brief" for new internships, programs, hackathons (Devpost, MLH, Cerebral Valley, Luma) and networking events.
 - **History:** [docs/CONTEXT.md](docs/CONTEXT.md). What was ported from the Mac Career-Ops setup.
 
 ## Quick start (in a cloud session)
@@ -31,6 +32,9 @@ scan (SimplifyJobs + ATS boards) → rules filter → queue → fill (Playwright
 | `src/rules.mjs` | Eligibility rules, resume choice, quick fit score |
 | `src/answers.mjs` | Question → answer engine (profile facts only) |
 | `src/fill.mjs` | Headless form filler and guarded submit |
+| `src/brief.mjs` | Daily brief: hackathons, events, programs, internships |
+| `src/outreach.mjs` | Startup and founder outreach |
+| `config/programs.json` | Curated programs and fellowships with deadlines |
 | `bin/apply.mjs`, `./apply` | CLI |
 | `config/boards.json` | Greenhouse/Lever/Ashby board slugs for direct scans |
 | `config/profile.example.json` | Fake profile used by tests and as a template |

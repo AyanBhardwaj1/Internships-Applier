@@ -34,9 +34,19 @@ Ayan can tap Approve on Desk cards (https://claude.ai/artifact/KwnbmT3ePXuvwZUNv
 Before Ayan approves a draft, replace its `[hook]` with one specific line about the company and a concrete Summer 2027
 project, using only facts from `private/cv.txt`. Never send email yourself. A Gmail connector, if attached, may only create drafts.
 
+## Daily brief (docs/BRIEF.md)
+When Ayan says "brief", "daily brief" or "what's new", run `./apply brief` and reply with a phone-length summary:
+the top internships, programs due soon, hackathons to register for, and networking events, each with its link.
+Never register him for anything.
+
+## Batches and relaying (standing instructions, 2026-11-10)
+- At most **7 applications at a time** (cloud `auto` caps at 7; the Mac opens at most 7 tabs at once).
+- After finishing any feature or workflow change here, relay it to the Mac session ("Internships Applier Automated")
+  with his prompt word for word, what was built, the commands and the rules (docs/RULES.md, "Relay to the Mac session").
+
 ## Commands
 `./apply doctor | scan | pick --top N | queue | show <slug> | inspect <slug> | fill <slug|--all> |
-answer <slug> "<question>" "<answer>" | approve <slug> | submit <slug..>|--approved | skip | status | track`
+answer <slug> "<question>" "<answer>" | approve <slug> | submit <slug..>|--approved | skip | status | track | brief | auto | outreach`
 
 Essays: run `./apply inspect <slug>` (or look at `asks` after `fill`), write 2–3 sentences grounded in
 `private/cv.txt` and the JD, save them with `./apply answer`, then `./apply fill <slug>` again.

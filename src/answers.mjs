@@ -27,6 +27,9 @@ export const RULES = [
   { not: /graduation date|expected graduat|when .*graduat|graduat.*(date|year|when)|\bgpa\b/, when: /currently enrolled|enrolled (in|as) (a|an)? ?(full[- ]time )?(student|undergraduate|degree)|are you (a )?current(ly)? (a )?student/, a: () => ({ choose: ['Yes'] }) },
   { when: /returning to school|return to (school|your studies)|continuing (your )?(education|studies) after/, a: () => ({ choose: ['Yes'] }) },
   { when: /highest (level of )?education (you have )?completed|highest degree (completed|earned|obtained)/, a: () => ({ choose: ['High school or equivalency diploma', 'High School Diploma', 'High school', 'High School or equivalent'] }) },
+  { when: /what city do you (currently )?live|which city do you (currently )?live|city (do you|you) (currently )?(live|reside)/, a: p => ({ text: `${p.location.city}, ${p.location.stateCode}` }) },
+  { when: /how many (prior |previous |past )?(industry |tech |software |professional )?internships/, a: p => { const n = (p.experience || []).filter(e => /intern/i.test(e.title)).length; return { choose: [String(n), n >= 3 ? '3+' : `${n}`], text: String(n) }; } },
+  { when: /united states citizen or national|lawfully admitted for permanent residence/, a: p => /citizen/i.test(p.workAuth?.citizenship || '') ? { choose: ['A United States citizen or national', 'U.S. citizen or national', 'U.S. Citizen'] } : { ask: 'Citizenship category' } },
   { when: /comfortable (using|with) git|version control|use git\b/, a: () => ({ choose: ['Yes'] }) },
   { when: /(salary|pay|compensation)( or hourly pay)? range (align|meet|match)|align with your (salary|pay|compensation) expectations/, a: () => ({ choose: ['Yes'] }) },
   { when: /reside in the (us|u\.s\.|united states)|live in the (us|united states) (during|for)|located in the (us|united states) (during|for)/, a: () => ({ choose: ['Yes'] }) },
@@ -49,7 +52,7 @@ export const RULES = [
   { when: /degree (are you )?(currently )?pursuing|pursuing.*degree|degree.*working toward|type of degree/, a: () => ({ choose: ["Bachelor’s degree", "Bachelor's degree", "Bachelor's Degree", "Bachelor's", 'Bachelors', 'Bachelor of Science', 'BS', 'Undergraduate'], text: 'Bachelor of Science' }) },
   { when: /rising (senior|junior)|final[- ]year student|graduating (in )?(december|dec) 2027|(december|dec) 2027 or may 2028/, a: () => ({ choose: ['No'] }) },
   { when: /full legal name|legal (full )?name$|^legal name/, a: p => ({ text: p.name.full }) },
-  { when: /f-?1 (status|visa)|curricular practical training|\bcpt\b|\bopt\b/, a: () => ({ choose: ['No'] }) },
+  { not: /sponsor/, when: /f-?1 (status|visa)|curricular practical training|\bcpt\b|\bopt\b/, a: () => ({ choose: ['No'] }) },
   { when: /(full[- ]time|return offer).*(what year|which year|when).*(start|available)|(what year|which year) .*(start|available).*(full[- ]time|return)/, a: p => ({ text: String(p.education.graduation.year), choose: [String(p.education.graduation.year), `Summer ${p.education.graduation.year}`, `${p.education.graduation.year}`] }) },
   { when: /(available|able|commit).*(summer|internship).*(may|june|2027)|commit to (attending )?the full .*(program|internship)/, a: () => ({ choose: ['Yes'] }) },
   { when: /intern(ship)? position .*or .*co-?op|interested in (an )?(intern|internship) or (a )?co-?op/, a: () => ({ choose: ['Intern', 'Internship', 'Intern position'] }) },
@@ -106,7 +109,7 @@ export const RULES = [
 
   // ---- work authorization
   { when: /(authori[sz]ed|eligible|able) to work.*without.*sponsor/, a: () => ({ choose: ['Yes'], text: 'Yes' }) },
-  { when: /sponsor/, a: () => ({ choose: ['No', 'No, I will not require sponsorship', 'I do not require sponsorship'], text: 'No' }) },
+  { when: /sponsor/, a: () => ({ choose: ['No', 'No, I will not require sponsorship', 'I do not require sponsorship', 'None'], text: 'No' }) },
   { when: /(legally )?(authori[sz]ed|eligible|permitted).*(work|employment)|right to work|work authori[sz]ation/, a: () => ({ choose: ['Yes', 'I am authorized to work in the United States for any employer', 'Yes, I am authorized', 'U.S. Citizen', 'US Citizen'], text: 'Yes' }) },
   { when: /visa status|immigration status|citizenship status|are you a (us|u\.s\.) citizen|citizen of the united states|u\.?s\.? person|export control|itar/, a: () => ({ choose: ['U.S. Citizen', 'US Citizen', 'Citizen', 'Yes', 'I am a U.S. Citizen'], text: 'U.S. Citizen' }) },
   { when: /(active|current).*(security )?clearance/, a: () => ({ choose: no }) },

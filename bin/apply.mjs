@@ -37,6 +37,21 @@ function trackerUpsert(row) {
 const COMMANDS = {
   auto: () => auto(),
   outreach: () => outreach(),
+  // Daily brief (docs/BRIEF.md): new internships, programs, hackathons, networking events, outreach status.
+  async brief() {
+    const days = Number(flag('days', 1));
+    const sources = flag('sources'); const asJson = !!flag('json');
+    const c = readJSON(P.candidates, { scannedAt: null });
+    if (flag('scan') || !c.scannedAt || Date.now() - Date.parse(c.scannedAt) > 20 * 3600e3) {
+      const { scan } = await import('../src/scan.mjs');
+      const r = await scan({ sources: ['simplify'] });
+      console.error(`(scanned ${r.total} listings first)`);
+    }
+    const { buildBrief } = await import('../src/brief.mjs');
+    const r = await buildBrief({ sinceDays: days, sources: typeof sources === 'string' ? sources.split(',') : undefined });
+    if (asJson) console.log(JSON.stringify({ file: r.file, counts: r.counts, errors: r.errors, hackathons: r.hackathons, events: r.events }, null, 1));
+    else { console.log(r.md); console.error(`saved ${path.relative(ROOT, r.file)} · sources ${JSON.stringify(r.counts)}`); }
+  },
   async doctor() {
     // Probe real paths with redirects off: site roots redirect to marketing domains we don't need.
     const hosts = ['https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/README.md', 'https://job-boards.greenhouse.io/figma', 'https://boards-api.greenhouse.io/v1/boards/figma/jobs',
@@ -139,7 +154,7 @@ async function auto() {
   const { scan } = await import('../src/scan.mjs');
   const { runApplication } = await import('../src/fill.mjs');
   const prof = profile();
-  const maxSubmit = Number(flag('max-submit', 15)), maxProbe = Number(flag('probe', 60)), dry = !!flag('dry'), sweOnly = !!flag('swe');
+  const maxSubmit = Math.min(7, Number(flag('max-submit', 7))), maxProbe = Number(flag('probe', 60)), dry = !!flag('dry'), sweOnly = !!flag('swe');
   const allowRecaptcha = !flag('none-only');
   const cache = readJSON(CAPTCHA_CACHE, {});
   const r = flag('no-scan') ? readJSON(P.candidates, { jobs: [] }) : await scan({ sources: ['simplify'] });
@@ -336,7 +351,10 @@ if (!cmd || !COMMANDS[cmd]) {
   skip <slug..>               drop from queue
   status                      tracker summary (live processes)
   track <id|company> <outcome> [note]
-  auto [--max-submit N] [--probe N] [--swe] [--none-only] [--dry]  scan → probe CAPTCHA → fill → submit complete ones`);
+  auto [--max-submit N] [--probe N] [--swe] [--none-only] [--dry]  scan → probe CAPTCHA → fill → submit complete ones (default max 7)
+  brief [--days N] [--scan] [--sources devpost,mlh,cerebralvalley,luma] [--json]
+                              daily brief: new internships, programs, hackathons, events, outreach
+  outreach <sub>              startup/founder outreach (docs/OUTREACH.md)`);
   process.exit(cmd ? 1 : 0);
 }
 await COMMANDS[cmd]();

@@ -14,6 +14,9 @@ Text the cloud session from the Claude app. These are the messages it understand
 | `skip valon` | Removes an application from the queue. |
 | `find more` / `scan` | Pulls fresh Summer 2027 postings and queues the best new matches (fill only). |
 | `got an OA from X` / `rejected by Y` | Updates the tracker. |
+| `brief` / `daily brief` | New internships, programs with deadlines, hackathons to register for, networking events, outreach status (docs/BRIEF.md). |
+
+Applications go in batches of **at most 7 at a time**, in the cloud and on the Mac.
 
 ## What Claude does on `submit X`
 1. Reopens X's form headlessly, refills it from your profile and saved answers, and re-reads every field.

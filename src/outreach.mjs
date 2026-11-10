@@ -176,8 +176,10 @@ export function draftEmail(L, { kind = 'founder', person = null } = {}) {
   const proof = PROOF[area];
   const subj = kind === 'referral' ? `Quick favor re: ${L.company}` : (/fall 2025/i.test(L.batch || '') ? `F25 batchmate's intern → ${L.company}` : `Moss (YC F25) intern → ${L.company}`);
   const hook = `[1 specific line about ${L.company}: ${L.oneLiner || 'their product'} — a demo, launch, paper or customer you noticed]`;
-  const ask = L.techInternJobs?.length
-    ? `I saw the ${L.techInternJobs[0].title} opening and applied; I'd love to put my hand up directly too.`
+  // Only point at a posted role if it's a Summer-compatible software/ML/robotics internship. Never claim he applied.
+  const job = (L.techInternJobs || []).find(j => /intern/i.test(j.title) && /software|swe|\bml\b|machine|\bai\b|vision|robot|data|research|engineer/i.test(j.title) && !/winter|spring|fall/i.test(j.title) || /summer/i.test(j.title));
+  const ask = job
+    ? `I saw the ${job.title.trim().replace(/\s+/g, ' ')} opening and wanted to reach out to you directly as well.`
     : `You may not have an intern role posted, so I'd like to propose one: a 12-week Summer 2027 project on [specific area at ${L.company}], with a paid trial task first if that's useful.`;
   const body = kind === 'referral'
     ? `Hi ${first},\n\nFellow Longhorn here (UT Austin CS + Business Honors '29). I'm hoping to intern at ${L.company} in Summer 2027 and saw you're on the team. Would you be open to forwarding the short blurb below to the right person? Totally fine if not.\n\n"Ayan Bhardwaj, UT Austin CS '29, interned at Moss and Koyal AI (both YC F25). ${proof}. GitHub: github.com/AyanBhardwaj1"\n\nThanks either way,\nAyan`
