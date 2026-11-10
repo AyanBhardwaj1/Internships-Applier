@@ -257,7 +257,7 @@ const line = it => {
   return `- ${it.isNew ? '🆕 ' : ''}**${it.name}**${it.org ? ` (${it.org})` : ''}: ${bits.filter(Boolean).join(' · ')}. ${it.url}`;
 };
 
-export function renderBrief({ date = today(), intern, programs, hackathons, events, outreach, errors = [] }) {
+export function renderBrief({ date = today(), intern, programs, hackathons, events, outreach, z2s = null, errors = [] }) {
   const L = [`# Daily brief: ${date}`, ''];
   L.push('## Internships');
   L.push(`${intern.newCount} new eligible postings since ${intern.since} (${intern.totalOk} open overall). Queue: ${intern.queue.ready} ready to submit, ${intern.queue.needsInput} need an answer from you, ${intern.queue.captcha} blocked by CAPTCHA, ${intern.queue.handedToMac} with the Mac.`);
@@ -273,6 +273,14 @@ export function renderBrief({ date = today(), intern, programs, hackathons, even
   if (hackathons.length) hackathons.forEach(h => L.push(line(h))); else L.push('- Nothing new or strong this time.');
   L.push('', '## Networking events');
   if (events.length) events.forEach(h => L.push(line(h))); else L.push('- Nothing new or strong this time.');
+  if (z2s) {
+    L.push('', '## zero2sudo');
+    for (const r of z2s.newRows) L.push(`- 🆕 Notion: **${r.company}**: ${r.title}${r.notes ? ` (${r.notes.slice(0, 100)})` : ''}. ${(r.url || '').replace(/[?&](fbclid|gh_src)=[^&]*/g, '')}`);
+    if (!z2s.newRows.length) L.push(`- Notion job table: nothing new (${z2s.total} rows, last edited ${(z2s.lastEdit || '?').slice(0, 10)}).`);
+    for (const i of z2s.recentIssues.slice(0, 3)) L.push(`- ${i.isNew ? '🆕 ' : ''}Direct Consideration: ${i.title} (${i.date}). Open it on your phone or Mac: ${i.url}`);
+    for (const i of z2s.inbox) L.push(`- You forwarded: ${i.company}: ${i.title}: ${i.outcome}.`);
+    L.push('- Instagram stories: forward links or screenshots to me ("z2s <link>"). I can\'t read stories myself.');
+  }
   if (outreach) {
     L.push('', '## Outreach');
     L.push(`${outreach.ready} drafted emails ready for you, ${outreach.sent} sent, ${outreach.replied} replied. Follow-ups due: ${outreach.due.length ? outreach.due.join(', ') : 'none'}.`);
@@ -301,7 +309,23 @@ export async function buildBrief({ sinceDays = 1, now = Date.now(), sources } = 
       due: o.dueFollowups(all, now).map(x => `${x.L.company} (#${x.n})`),
     };
   } catch { /* outreach not set up */ }
-  const md = renderBrief({ date: new Date(now).toISOString().slice(0, 10), intern, programs, hackathons, events, outreach, errors });
+  // zero2sudo (docs/SOURCES.md): Notion job table, Direct Consideration issues, links Ayan forwarded.
+  let z2s = null;
+  try {
+    const z = await import('./zero2sudo.mjs');
+    const seen = readJSON(B.seen, {});
+    const [rows, issues] = await Promise.all([z.fromNotion().catch(e => { errors.push(`zero2sudo notion: ${e.message}`); return []; }),
+      z.newsletterIssues().catch(e => { errors.push(`newsletter: ${e.message}`); return []; })]);
+    const fresh = x => { const k = `z2s:${x.url}`; const first = seen[k] || today(); seen[k] = first; return first >= new Date(now - 1.5 * DAY).toISOString().slice(0, 10); };
+    // Only rows that are both unseen and recently edited (the table holds months-old links too).
+    const newRows = rows.filter(r => { const f = fresh(r); return f && Date.parse(r.edited) > now - 14 * DAY; }).slice(0, 6);
+    const recentIssues = issues.filter(i => Date.parse(i.date) > now - 7 * DAY).map(i => ({ ...i, isNew: fresh(i) }));
+    writeJSON(B.seen, seen);
+    const inbox = readJSON(path.join(PRIVATE, 'inbox.json'), { items: [] }).items.filter(i => Date.parse(i.at) > now - sinceDays * DAY);
+    const lastEdit = rows.map(r => r.edited).sort().pop() || null;
+    z2s = { newRows, recentIssues, inbox, lastEdit, total: rows.length };
+  } catch (e) { errors.push(`zero2sudo: ${e.message}`); }
+  const md = renderBrief({ date: new Date(now).toISOString().slice(0, 10), intern, programs, hackathons, events, outreach, z2s, errors });
   const file = path.join(B.dir, `${new Date(now).toISOString().slice(0, 10)}.md`);
   fs.mkdirSync(B.dir, { recursive: true });
   fs.writeFileSync(file, md);

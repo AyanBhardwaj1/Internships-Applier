@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { parseDevpostDates, scoreItem, isHackathon, nearAustin, inUS, pickEvents, renderBrief } from '../src/brief.mjs';
 import { draftEmail } from '../src/outreach.mjs';
+import { parseRow, notionToJobs } from '../src/zero2sudo.mjs';
 
 let n = 0; const t = (name, fn) => { fn(); n++; };
 const NOW = Date.parse('2026-11-10T12:00:00Z');
@@ -64,6 +65,17 @@ t('outreach draft never claims he applied; only Summer-compatible intern roles a
   assert.ok(/Robotics Engineer Intern opening/.test(a.body) && !/applied/.test(a.body));
   const b = draftEmail({ ...lead, techInternJobs: [{ title: 'Research Intern (Winter 2027)' }, { title: 'Mechatronics Engineer' }] });
   assert.ok(/propose one/.test(b.body));
+});
+
+t('zero2sudo Notion rows: header skipped, jobs vs events, tracking params stripped', () => {
+  const cell = (text, link) => [[text, link ? [['a', link]] : undefined].filter(Boolean)];
+  assert.equal(parseRow([cell('Item'), cell('Link'), cell('Quick notes')], '2026-02-06'), null);
+  const job = parseRow([cell('Stripe — Software Engineer Intern (Summer 2027)'), cell('Job Posting', 'https://stripe.com/jobs/1?gh_src=x'), cell('Seattle, WA')], '2026-11-09T00:00:00Z');
+  assert.equal(job.kind, 'job'); assert.equal(job.company, 'Stripe'); assert.equal(job.title, 'Software Engineer Intern (Summer 2027)');
+  const ev = parseRow([cell('Meta — PE event'), cell('Event', 'https://events.atmeta.com/pe'), cell('Recruiting event')], '2026-11-09');
+  assert.equal(ev.kind, 'event');
+  const [j] = notionToJobs([job, ev]);
+  assert.equal(j.url, 'https://stripe.com/jobs/1'); assert.deepEqual(j.terms, ['Summer 2027']); assert.deepEqual(j.locations, ['Seattle, WA']);
 });
 
 console.log(`brief tests: ${n} passed`);

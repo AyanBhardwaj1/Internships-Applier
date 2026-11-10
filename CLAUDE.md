@@ -39,6 +39,11 @@ When Ayan says "brief", "daily brief" or "what's new", run `./apply brief` and r
 the top internships, programs due soon, hackathons to register for, and networking events, each with its link.
 Never register him for anything.
 
+## zero2sudo drops (docs/SOURCES.md)
+When Ayan sends `z2s <link..>` (or a screenshot of a zero2sudo story), run `./apply add <url..> --from zero2sudo`. For a
+screenshot, read the company and role, find the official posting link, then add it. Never scrape Instagram.
+The scan reads zero2sudo's public Notion job table; the brief lists new Direct Consideration newsletter issues.
+
 ## Batches and relaying (standing instructions, 2026-11-10)
 - At most **7 applications at a time** (cloud `auto` caps at 7; the Mac opens at most 7 tabs at once).
 - After finishing any feature or workflow change here, relay it to the Mac session ("Internships Applier Automated")
@@ -46,7 +51,7 @@ Never register him for anything.
 
 ## Commands
 `./apply doctor | scan | pick --top N | queue | show <slug> | inspect <slug> | fill <slug|--all> |
-answer <slug> "<question>" "<answer>" | approve <slug> | submit <slug..>|--approved | skip | status | track | brief | auto | outreach`
+answer <slug> "<question>" "<answer>" | approve <slug> | submit <slug..>|--approved | skip | status | track | brief | add | auto | outreach`
 
 Essays: run `./apply inspect <slug>` (or look at `asks` after `fill`), write 2–3 sentences grounded in
 `private/cv.txt` and the JD, save them with `./apply answer`, then `./apply fill <slug>` again.

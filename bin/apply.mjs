@@ -44,7 +44,7 @@ const COMMANDS = {
     const c = readJSON(P.candidates, { scannedAt: null });
     if (flag('scan') || !c.scannedAt || Date.now() - Date.parse(c.scannedAt) > 20 * 3600e3) {
       const { scan } = await import('../src/scan.mjs');
-      const r = await scan({ sources: ['simplify'] });
+      const r = await scan();
       console.error(`(scanned ${r.total} listings first)`);
     }
     const { buildBrief } = await import('../src/brief.mjs');
@@ -73,12 +73,45 @@ const COMMANDS = {
 
   async scan() {
     const { scan } = await import('../src/scan.mjs');
-    const sources = ['simplify', ...(flag('boards') ? ['boards'] : [])];
+    const { DEFAULT_SOURCES } = await import('../src/scan.mjs');
+    const sources = [...DEFAULT_SOURCES, ...(flag('boards') ? ['boards'] : [])];
     const r = await scan({ sources, maxAgeDays: Number(flag('days', 120)) });
     const lanes = {}; for (const j of r.jobs) lanes[j.lane] = (lanes[j.lane] || 0) + 1;
     console.log(`Scanned ${r.total} active listings → ${JSON.stringify(lanes)}`);
     const top = r.jobs.filter(j => j.ok).slice(0, Number(flag('top', 30)));
     console.log(fmtTable(top.map(j => ({ score: j.score, company: j.company.slice(0, 26), title: j.title.slice(0, 50), where: (j.locations[0] || '').slice(0, 18), ats: j.ats, hold: j.hold ? 'HOLD' : '' })), ['score', 'company', 'title', 'where', 'ats', 'hold']));
+  },
+
+  // Links Ayan forwards (zero2sudo stories, friends, group chats): `add <url..> [--from zero2sudo] [--note "..."]`.
+  // Each link goes through the same rules as scanned postings. Sign-in or company-site links are logged for the Mac.
+  async add() {
+    const from = String(flag('from', 'forwarded')), note = flag('note');
+    const { resolvePosting } = await import('../src/zero2sudo.mjs');
+    const { classify, quickScore, resumeFor, holdFor } = await import('../src/rules.mjs');
+    const { trackerIndex } = await import('../src/scan.mjs');
+    const idx = trackerIndex(readJSON(P.tracker, { rows: [] }));
+    const existing = new Set(loadQueue().map(q => q.id));
+    const inboxFile = path.join(ROOT, 'private', 'inbox.json');
+    const inbox = readJSON(inboxFile, { items: [] });
+    for (const url of args.filter(a => /^https?:\/\//.test(a))) {
+      const info = await resolvePosting(url);
+      const d = detectATS(url);
+      const j = { source: from, company: info.company || d.board || d.host || 'unknown', title: info.title || 'unknown role', url, locations: info.locations || [], terms: [], category: '' };
+      const id = urlKey(url);
+      const c = classify(j);
+      let outcome;
+      if (existing.has(id)) outcome = 'already queued';
+      else if (idx.has(j)) outcome = 'already applied/tracked';
+      else if (c.ok && !holdFor(j.company)) {
+        const slug = slugify(`${j.company}-${j.title}`).slice(0, 48) + '-' + id.split(':').pop().slice(-6);
+        saveItem({ slug, id, company: j.company, title: j.title, url, applyUrl: applyUrl(url), ats: d.ats, locations: j.locations, terms: [], resume: resumeFor(j.title),
+          score: quickScore(j), status: 'new', approved: false, overrides: {}, asks: [], notes: [note, c.reasons.join('; ')].filter(Boolean), addedAt: nowISO(), history: [], origin: from });
+        outcome = `queued ${slug}`;
+      } else outcome = ['account', 'other-host', 'manual'].includes(c.lane) ? `for the Mac (${c.reasons.at(-1)})` : `skipped: ${c.reasons.join('; ') || c.lane}`;
+      inbox.items.push({ at: nowISO(), from, url, company: j.company, title: j.title, lane: c.lane, outcome, note: note || null });
+      console.log(`${j.company} — ${j.title}: ${outcome}`);
+    }
+    writeJSON(inboxFile, inbox);
   },
 
   // Move candidates into the apply queue: `pick --top 25` or `pick <candidate-id|url> ...`
@@ -157,7 +190,7 @@ async function auto() {
   const maxSubmit = Math.min(7, Number(flag('max-submit', 7))), maxProbe = Number(flag('probe', 60)), dry = !!flag('dry'), sweOnly = !!flag('swe');
   const allowRecaptcha = !flag('none-only');
   const cache = readJSON(CAPTCHA_CACHE, {});
-  const r = flag('no-scan') ? readJSON(P.candidates, { jobs: [] }) : await scan({ sources: ['simplify'] });
+  const r = flag('no-scan') ? readJSON(P.candidates, { jobs: [] }) : await scan();
   const queued = new Set(loadQueue().map(q => q.id));
   let cands = r.jobs.filter(j => j.ok && !j.hold && !queued.has(j.id) && ['greenhouse', 'ashby'].includes(j.ats));
   { const seen = new Set(); cands = cands.filter(j => { const k = (j.company + '|' + j.title).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; }); }
@@ -352,6 +385,7 @@ if (!cmd || !COMMANDS[cmd]) {
   status                      tracker summary (live processes)
   track <id|company> <outcome> [note]
   auto [--max-submit N] [--probe N] [--swe] [--none-only] [--dry]  scan → probe CAPTCHA → fill → submit complete ones (default max 7)
+  add <url..> [--from zero2sudo] [--note "<text>"]   queue links Ayan forwards (rules still apply)
   brief [--days N] [--scan] [--sources devpost,mlh,cerebralvalley,luma] [--json]
                               daily brief: new internships, programs, hackathons, events, outreach
   outreach <sub>              startup/founder outreach (docs/OUTREACH.md)`);

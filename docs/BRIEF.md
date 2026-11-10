@@ -16,7 +16,8 @@ runs `./apply brief` and replies with the result, condensed for a phone.
    - In-person events outside the US are dropped.
 4. **Networking events:** Luma (Austin, SF and the AI/Tech categories) and Cerebral Valley. Only tech events that
    match his interests; sold-out ones are pushed down. Good founders met here become outreach leads (docs/OUTREACH.md).
-5. **Outreach:** drafted emails ready, sent, replies, and follow-ups due.
+5. **zero2sudo:** new rows in his Notion job table, new Direct Consideration issues, and links you forwarded (docs/SOURCES.md).
+6. **Outreach:** drafted emails ready, sent, replies, and follow-ups due.
 
 "New" (🆕) means first seen in the last ~36 hours. Older items appear again only when they score high ("if it's that
 good"). Seen items are stored in `private/brief/seen.json`, and each brief is saved as `private/brief/<date>.md`.
@@ -28,6 +29,7 @@ good"). Seen items are stored in `private/brief/seen.json`, and each brief is sa
 | MLH | student hackathons this season | `www.mlh.com/seasons/<year>/events` (page JSON) |
 | Cerebral Valley | AI hackathons and events | `cerebralvalley.ai/events` and `/hackathons` (JSON-LD) |
 | Luma | Austin, SF, AI and Tech events | `api.lu.ma/discover/get-paginated-events` |
+| zero2sudo Notion + Direct Consideration | his job table and the newsletter's sitemap | `src/zero2sudo.mjs` |
 | SimplifyJobs + boards | internships | `./apply scan` (auto-run if the last scan is older than 20 hours) |
 
 The cloud environment allowlists these hosts: devpost.com, www.mlh.com, mlh.io, cerebralvalley.ai, lu.ma, api.lu.ma,

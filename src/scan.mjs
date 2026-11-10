@@ -69,12 +69,19 @@ export function trackerIndex(tracker) {
   return { keys, titles, has: j => keys.has(urlKey(j.url)) || titles.has(`${normCompany(j.company)}|${normTitle(j.title)}`) };
 }
 
-export async function scan({ sources = ['simplify'], maxAgeDays = 120 } = {}) {
+export const DEFAULT_SOURCES = ['simplify', 'zero2sudo'];
+
+export async function scan({ sources = DEFAULT_SOURCES, maxAgeDays = 120 } = {}) {
   const tracker = readJSON(P.tracker, { rows: [] });
   const idx = trackerIndex(tracker);
   let jobs = [];
   if (sources.includes('simplify')) jobs.push(...await fromSimplify({ maxAgeDays }));
   if (sources.includes('boards')) jobs.push(...await fromBoards());
+  if (sources.includes('zero2sudo')) {
+    // zero2sudo's public Notion job table (docs/SOURCES.md). Instagram stories are not scraped.
+    try { const z = await import('./zero2sudo.mjs'); jobs.push(...z.notionToJobs(await z.fromNotion())); }
+    catch (e) { console.error(`[zero2sudo] ${e.message}`); }
+  }
   // Company-site links like stripe.com/jobs?gh_jid=123 -> the real Greenhouse board form.
   const boards = readJSON(path.join(ROOT, 'config', 'boards.json'), { greenhouseByCompany: {} });
   for (const j of jobs) {

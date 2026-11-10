@@ -146,7 +146,7 @@ export const RULES = [
   { when: /relative|family member|personal relationship|related to (any|anyone|an employee)|related to .*employee/, a: () => ({ choose: no }) },
   { when: /non-?compete|non-?solicit|nda|restrictive covenant/, a: () => ({ choose: no }) },
   { when: /referr(ed|al)|employee referral|know anyone/, a: () => ({ choose: ['No', 'No, I was not referred', 'I was not referred', 'Not referred'], text: 'N/A' }) },
-  { when: /how (did )?you (first )?(hear|find|learn|connect|come across)|how you (heard|found|learned)|where did you (hear|find|learn|see)|^source$|referral source/, a: p => ({ choose: [p.defaults.howDidYouHear, 'LinkedIn', 'Job Board', 'Online Job Board', 'Internet', 'Other'], text: p.defaults.howDidYouHear }) },
+  { when: /how (did )?you (first )?(hear|find|learn|connect|come across)|how you (heard|found|learned)|where did you (hear|find|learn|see)|^source$|referral source/, a: (p, _f, job = {}) => /zero2sudo/i.test(job.origin || '') ? { choose: ['Instagram', 'Social Media', 'Social media', 'Other', p.defaults.howDidYouHear], text: 'Instagram (@zero2sudo)' } : { choose: [p.defaults.howDidYouHear, 'LinkedIn', 'Job Board', 'Online Job Board', 'Internet', 'Other'], text: p.defaults.howDidYouHear } },
   { when: /^current (company|employer)$|^current (company|employer)\b(?!.* or )/, a: (p, f) => f.required ? { text: `Student, ${p.education.school}` } : { clear: true } },
   { when: /current (title|job title|role)/, a: () => ({ skip: true }) },
   { when: /years of (professional |relevant |work |industry )?experience|years of industry/, a: () => ({ text: '1', choose: ['0-1', 'Less than 1 year', '0 - 1 years', '1', '1-2', '1 year'] }) },
